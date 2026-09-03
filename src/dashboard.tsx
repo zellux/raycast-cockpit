@@ -1,12 +1,10 @@
 import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
   accents,
-  networkMetricCard,
   type NetworkMetricCard,
-  quotaMetricCard,
   type QuotaMetricCard,
   type RingMetricCard,
-  systemMetricCard,
+  systemMetricIcon,
   usageAccent,
 } from "./lib/cards";
 import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
@@ -155,22 +153,34 @@ export default function Dashboard() {
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
       searchBarPlaceholder="Filter metrics…"
-      columns={3}
+      columns={4}
       aspectRatio="3/2"
-      fit={Grid.Fit.Fill}
-      inset={Grid.Inset.Zero}
+      fit={Grid.Fit.Contain}
+      inset={Grid.Inset.Medium}
     >
       {!hasMetrics ? (
         <Grid.EmptyView title="No Metrics Available" description={emptyMessage} icon={Icon.Gauge} />
       ) : null}
 
       {systemCards.length > 0 ? (
-        <Grid.Section title="System" subtitle={`${systemCards.length} metrics`} columns={3} aspectRatio="3/2">
+        <Grid.Section
+          title="System"
+          subtitle={`${systemCards.length} metrics`}
+          columns={4}
+          aspectRatio="3/2"
+          fit={Grid.Fit.Contain}
+          inset={Grid.Inset.Medium}
+        >
           {systemCards.map((card) => (
             <Grid.Item
               key={card.label}
               id={`system-${card.label.toLowerCase()}`}
-              content={{ value: systemMetricCard(card), tooltip: `${card.label}: ${card.value} · ${card.detail}` }}
+              content={{
+                value: { source: systemMetricIcon(card.icon), tintColor: card.accent },
+                tooltip: `${card.label}: ${card.value} · ${card.detail}`,
+              }}
+              title={`${card.value} ${card.label}`}
+              subtitle={card.detail}
               keywords={[card.label, card.value, card.detail]}
               actions={actions}
             />
@@ -179,14 +189,29 @@ export default function Dashboard() {
       ) : null}
 
       {networkCards.length > 0 ? (
-        <Grid.Section title="Network" subtitle={networkSubtitle} columns={3} aspectRatio="3/2">
+        <Grid.Section
+          title="Network"
+          subtitle={networkSubtitle}
+          columns={4}
+          aspectRatio="3/2"
+          fit={Grid.Fit.Contain}
+          inset={Grid.Inset.Medium}
+        >
           {networkCards.map((card) => {
             const label = card.direction === "down" ? "Download" : "Upload";
             return (
               <Grid.Item
                 key={card.direction}
                 id={`network-${card.direction}`}
-                content={{ value: networkMetricCard(card), tooltip: `${label}: ${card.value}` }}
+                content={{
+                  value: {
+                    source: card.direction === "down" ? Icon.ArrowDown : Icon.ArrowUp,
+                    tintColor: card.accent,
+                  },
+                  tooltip: `${label}: ${card.value} · Peak ${card.peak} · Total ${card.total}`,
+                }}
+                title={`${card.value} ${label}`}
+                subtitle={`Peak ${card.peak}`}
                 keywords={[label, card.value, card.peak, card.total]}
                 actions={actions}
               />
@@ -196,12 +221,24 @@ export default function Dashboard() {
       ) : null}
 
       {quotaCards.length > 0 ? (
-        <Grid.Section title="Token quota" subtitle={`${quotaCards.length} windows`} columns={3} aspectRatio="3/2">
+        <Grid.Section
+          title="Token quota"
+          subtitle={`${quotaCards.length} windows`}
+          columns={4}
+          aspectRatio="3/2"
+          fit={Grid.Fit.Contain}
+          inset={Grid.Inset.Medium}
+        >
           {quotaCards.map((card) => (
             <Grid.Item
               key={card.id}
               id={`quota-${card.id}`}
-              content={{ value: quotaMetricCard(card), tooltip: `${card.label}: ${card.percent}% · ${card.reset}` }}
+              content={{
+                value: { source: Icon.Gauge, tintColor: card.accent },
+                tooltip: `${card.label}: ${card.percent}% · ${card.reset}`,
+              }}
+              title={`${card.percent}% ${card.label}`}
+              subtitle={card.reset}
               keywords={[card.label, `${card.percent}%`, card.reset]}
               actions={actions}
             />
