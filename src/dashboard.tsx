@@ -165,7 +165,7 @@ export default function Dashboard() {
       ) : null}
 
       {systemCards.length > 0 ? (
-        <Grid.Section title="System" subtitle={`${systemCards.length} metrics`} columns={4} aspectRatio="3/2">
+        <Grid.Section title="System" subtitle={`${systemCards.length} metrics`} columns={3} aspectRatio="3/2">
           {systemCards.map((card) => (
             <Grid.Item
               key={card.label}
@@ -179,7 +179,7 @@ export default function Dashboard() {
       ) : null}
 
       {networkCards.length > 0 ? (
-        <Grid.Section title="Network" subtitle={networkSubtitle} columns={2} aspectRatio="16/9">
+        <Grid.Section title="Network" subtitle={networkSubtitle} columns={3} aspectRatio="3/2">
           {networkCards.map((card) => {
             const label = card.direction === "down" ? "Download" : "Upload";
             return (

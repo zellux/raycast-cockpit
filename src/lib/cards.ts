@@ -118,22 +118,24 @@ export function networkMetricCard(card: NetworkMetricCard): string {
   const label = card.direction === "down" ? "DOWNLOAD" : "UPLOAD";
 
   return svgFrame(
-    640,
-    360,
+    420,
+    280,
     `
-      <text x="36" y="190" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="48" font-weight="700">${arrow}</text>
-      <text x="91" y="174" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="45" font-weight="700">${escapeXml(card.value)}</text>
-      <text x="93" y="211" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="18" font-weight="600" letter-spacing="1.4">${label}</text>
-      <line x1="365" y1="107" x2="365" y2="225" stroke="${palette.divider}" stroke-width="2"/>
-      <text x="398" y="139" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="18" font-weight="600" letter-spacing="1.2">PEAK</text>
-      <text x="398" y="177" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="27" font-weight="650">${escapeXml(card.peak)}</text>
-      <text x="398" y="213" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="21" font-weight="500">Total ${escapeXml(card.total)}</text>
+      <text x="24" y="99" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="42" font-weight="700">${arrow}</text>
+      <text x="69" y="94" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="38" font-weight="700">${escapeXml(card.value)}</text>
+      <text x="71" y="126" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="16" font-weight="600" letter-spacing="1.2">${label}</text>
+      <line x1="24" y1="153" x2="396" y2="153" stroke="${palette.divider}" stroke-width="2"/>
+      <text x="24" y="187" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="16" font-weight="600" letter-spacing="1">PEAK</text>
+      <text x="24" y="222" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="24" font-weight="650">${escapeXml(card.peak)}</text>
+      <text x="220" y="187" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="16" font-weight="600" letter-spacing="1">TOTAL</text>
+      <text x="220" y="222" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="24" font-weight="650">${escapeXml(card.total)}</text>
     `,
   );
 }
