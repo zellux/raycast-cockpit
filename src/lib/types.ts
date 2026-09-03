@@ -1,4 +1,4 @@
-export type ModuleKey = "cpu" | "memory" | "disk" | "network" | "battery" | "codex";
+export type ModuleKey = "cpu" | "memory" | "disk" | "uptime" | "network" | "battery" | "codex";
 
 export interface CpuMetric {
   percent: number;
@@ -15,6 +15,10 @@ export interface DiskMetric {
   usedBytes: number;
   totalBytes: number;
   availableBytes: number;
+}
+
+export interface UptimeMetric {
+  seconds: number;
 }
 
 export interface NetworkMetric {
@@ -61,6 +65,7 @@ export interface StatusSnapshot {
   cpu?: CpuMetric;
   memory?: MemoryMetric;
   disk?: DiskMetric;
+  uptime?: UptimeMetric;
   network?: NetworkMetric;
   battery?: BatteryMetric;
   codex?: CodexMetric;
@@ -71,6 +76,7 @@ export interface ModulePreferences {
   showCpu: boolean;
   showMemory: boolean;
   showDisk: boolean;
+  showUptime: boolean;
   showNetwork: boolean;
   showBattery: boolean;
   showCodex: boolean;

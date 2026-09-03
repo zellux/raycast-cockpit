@@ -23,7 +23,7 @@ export const accents = {
   purple: "#7657E8",
 };
 
-export type SystemMetricIcon = "cpu" | "memory" | "disk" | "battery";
+export type SystemMetricIcon = "cpu" | "memory" | "disk" | "battery" | "uptime";
 
 export interface RingMetricCard {
   icon: SystemMetricIcon;
@@ -90,6 +90,8 @@ function systemIcon(icon: SystemMetricIcon, accent: string): string {
       return `<g ${common}><rect x="1" y="4" width="43" height="35" rx="7"/><path d="M1 28h43"/><circle cx="34" cy="34" r="2" fill="${accent}" stroke="none"/></g>`;
     case "battery":
       return `<g ${common}><rect x="0" y="6" width="39" height="29" rx="6"/><path d="M43 15v11M8 20h23"/></g>`;
+    case "uptime":
+      return `<g ${common}><circle cx="22" cy="22" r="19"/><path d="M22 11v12l8 5"/></g>`;
   }
 }
 

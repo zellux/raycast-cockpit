@@ -7,6 +7,7 @@ A configurable local Raycast extension for viewing essential Mac and Codex statu
 - CPU usage
 - Memory pressure and usage
 - Root disk usage
+- Time since the Mac was last started
 - Current upload and download speed on the default network interface
 - Battery percentage, state, and time remaining
 - Codex / GPT rate-limit windows, remaining percentage, and reset time

@@ -14,6 +14,8 @@ type ExtensionPreferences = {
   "showMemory": boolean,
   /** Disk - Include usage for the macOS root disk. */
   "showDisk": boolean,
+  /** Uptime - Include the time since this Mac was last started. */
+  "showUptime": boolean,
   /** Network - Include live upload and download throughput for the default interface. */
   "showNetwork": boolean,
   /** Battery - Include battery percentage, charging state, and estimated time remaining. */

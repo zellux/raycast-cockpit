@@ -15,6 +15,7 @@ export function useStatusSnapshot() {
       showCpu: preferences.showCpu,
       showMemory: preferences.showMemory,
       showDisk: preferences.showDisk,
+      showUptime: preferences.showUptime,
       showNetwork: preferences.showNetwork,
       showBattery: preferences.showBattery,
       showCodex: preferences.showCodex,

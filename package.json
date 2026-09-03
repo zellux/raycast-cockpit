@@ -55,6 +55,15 @@
       "default": true
     },
     {
+      "name": "showUptime",
+      "type": "checkbox",
+      "required": false,
+      "title": "Uptime",
+      "description": "Include the time since this Mac was last started.",
+      "label": "Show system uptime",
+      "default": true
+    },
+    {
       "name": "showNetwork",
       "type": "checkbox",
       "required": false,

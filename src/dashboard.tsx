@@ -9,7 +9,14 @@ import {
   systemMetricCard,
   usageAccent,
 } from "./lib/cards";
-import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
+import {
+  formatBytes,
+  formatDuration,
+  formatRate,
+  formatResetTime,
+  formatWindowName,
+  remainingPercent,
+} from "./lib/format";
 import { useCardImage } from "./lib/use-card-image";
 import { useStatusSnapshot } from "./lib/use-status";
 import type { ReactNode } from "react";
@@ -103,6 +110,16 @@ export default function Dashboard() {
       accent: usageAccent(snapshot.disk.percent),
     });
   }
+  if (snapshot?.uptime) {
+    systemCards.push({
+      icon: "uptime",
+      label: "Uptime",
+      percent: 0,
+      value: formatDuration(snapshot.uptime.seconds),
+      detail: "Uptime",
+      accent: accents.blue,
+    });
+  }
   if (snapshot?.battery) {
     systemCards.push({
       icon: "battery",
@@ -161,7 +178,7 @@ export default function Dashboard() {
   const networkSamples = Math.max(networkHistory.download.length, networkHistory.upload.length);
   const networkSeconds = Math.max(0, (networkSamples - 1) * Math.max(2, Number(preferences.dashboardRefreshSeconds)));
   const networkSubtitle = snapshot?.network
-    ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s` : " · sampling"}`
+    ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s peak` : " · sampling"}`
     : "";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
   const emptyMessage =

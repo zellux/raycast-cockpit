@@ -1,5 +1,6 @@
 import { LocalStorage } from "@raycast/api";
 import { execFile, spawn } from "node:child_process";
+import { uptime } from "node:os";
 import { promisify } from "node:util";
 import type {
   BatteryMetric,
@@ -13,6 +14,7 @@ import type {
   NetworkMetric,
   RateLimitWindow,
   StatusSnapshot,
+  UptimeMetric,
 } from "./types";
 import { clampPercent } from "./format";
 
@@ -90,6 +92,10 @@ export async function collectDisk(): Promise<DiskMetric> {
   const availableBytes = Number(fields[3]) * 1024;
   const percent = clampPercent(Number(fields[4].replace("%", "")));
   return { percent, totalBytes, usedBytes, availableBytes };
+}
+
+export async function collectUptime(): Promise<UptimeMetric> {
+  return { seconds: Math.max(0, Math.floor(uptime())) };
 }
 
 async function defaultNetworkInterface(): Promise<string> {
@@ -339,6 +345,7 @@ export async function collectSnapshot(preferences: ModulePreferences, forceCodex
     capture("cpu", preferences.showCpu, collectCpu, (value) => (snapshot.cpu = value), snapshot.errors),
     capture("memory", preferences.showMemory, collectMemory, (value) => (snapshot.memory = value), snapshot.errors),
     capture("disk", preferences.showDisk, collectDisk, (value) => (snapshot.disk = value), snapshot.errors),
+    capture("uptime", preferences.showUptime, collectUptime, (value) => (snapshot.uptime = value), snapshot.errors),
     capture("network", preferences.showNetwork, collectNetwork, (value) => (snapshot.network = value), snapshot.errors),
     capture("battery", preferences.showBattery, collectBattery, (value) => (snapshot.battery = value), snapshot.errors),
     capture(

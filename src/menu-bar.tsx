@@ -10,7 +10,14 @@ import {
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { collectSnapshot } from "./lib/collectors";
-import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
+import {
+  formatBytes,
+  formatDuration,
+  formatRate,
+  formatResetTime,
+  formatWindowName,
+  remainingPercent,
+} from "./lib/format";
 import type { ModulePreferences, StatusSnapshot } from "./lib/types";
 
 function modulePreferences(preferences: Preferences): ModulePreferences {
@@ -18,6 +25,7 @@ function modulePreferences(preferences: Preferences): ModulePreferences {
     showCpu: preferences.showCpu,
     showMemory: preferences.showMemory,
     showDisk: preferences.showDisk,
+    showUptime: preferences.showUptime,
     showNetwork: preferences.showNetwork,
     showBattery: preferences.showBattery,
     showCodex: preferences.showCodex,
@@ -76,6 +84,9 @@ export default function MenuBar() {
           subtitle={`${data.disk.percent}% · ${formatBytes(data.disk.availableBytes)} available`}
           icon={Icon.HardDrive}
         />
+      ) : null}
+      {data?.uptime ? (
+        <MenuBarExtra.Item title="Uptime" subtitle={formatDuration(data.uptime.seconds)} icon={Icon.Clock} />
       ) : null}
       {data?.network ? (
         <MenuBarExtra.Item
