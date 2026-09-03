@@ -2,29 +2,26 @@ import {
   Action,
   ActionPanel,
   Color,
+  Grid,
   Icon,
   Keyboard,
-  List,
   openExtensionPreferences,
   showToast,
   Toast,
 } from "@raycast/api";
 import type { ReactNode } from "react";
-import {
-  formatBytes,
-  formatRate,
-  formatResetTime,
-  formatWindowName,
-  progressGlyph,
-  remainingPercent,
-} from "./lib/format";
-import type { ModuleKey, RateLimitWindow, StatusSnapshot } from "./lib/types";
+import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
+import type { ModuleKey, RateLimitWindow } from "./lib/types";
 import { useStatusSnapshot } from "./lib/use-status";
 
 function colorForPercent(percent: number, inverted = false): Color {
   const danger = inverted ? percent <= 15 : percent >= 90;
   const warning = inverted ? percent <= 30 : percent >= 75;
   return danger ? Color.Red : warning ? Color.Yellow : Color.Green;
+}
+
+function shortProviderName(provider: string): string {
+  return provider.replace(/^GPT-[^-]+-Codex-/i, "");
 }
 
 function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promise<void> }) {
@@ -45,19 +42,35 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
   );
 }
 
-function ErrorRow({ module, message, actions }: { module: ModuleKey; message: string; actions: ReactNode }) {
-  const title = module === "codex" ? "Codex / GPT" : module[0].toUpperCase() + module.slice(1);
+function MetricTile({
+  icon,
+  color,
+  title,
+  value,
+  detail,
+  keywords,
+  actions,
+}: {
+  icon: Icon;
+  color: Color;
+  title: string;
+  value: string;
+  detail?: string;
+  keywords?: string[];
+  actions: ReactNode;
+}) {
   return (
-    <List.Item
-      icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
-      title={`${title} unavailable`}
-      subtitle={message}
+    <Grid.Item
+      content={{ source: icon, tintColor: color }}
+      title={title}
+      subtitle={detail ? `${value} · ${detail}` : value}
+      keywords={keywords}
       actions={actions}
     />
   );
 }
 
-function WindowRow({
+function CodexTile({
   provider,
   window,
   kind,
@@ -69,138 +82,137 @@ function WindowRow({
   actions: ReactNode;
 }) {
   const remaining = remainingPercent(window);
+  const windowName = formatWindowName(window.windowDurationMins).replace(/ window$/i, "");
+
   return (
-    <List.Item
-      icon={{ source: Icon.Stars, tintColor: colorForPercent(remaining, true) }}
-      title={`${provider} · ${formatWindowName(window.windowDurationMins)}`}
-      subtitle={`${progressGlyph(remaining)}  ${remaining}% remaining`}
-      accessories={[{ text: formatResetTime(window.resetsAt), tooltip: `${kind} reset` }]}
+    <MetricTile
+      icon={Icon.Stars}
+      color={colorForPercent(remaining, true)}
+      title={`${shortProviderName(provider)} · ${windowName}`}
+      value={`${remaining}% remaining`}
+      detail={formatResetTime(window.resetsAt)}
+      keywords={["codex", "gpt", provider, kind, windowName]}
       actions={actions}
     />
   );
 }
 
-function enabledCount(snapshot: StatusSnapshot): number {
-  return [snapshot.cpu, snapshot.memory, snapshot.disk, snapshot.network, snapshot.battery, snapshot.codex].filter(
-    Boolean,
-  ).length;
-}
+const moduleTitles: Record<ModuleKey, string> = {
+  cpu: "CPU",
+  memory: "Memory",
+  disk: "Disk",
+  network: "Network",
+  battery: "Battery",
+  codex: "Codex / GPT",
+};
 
 export default function Dashboard() {
   const { snapshot, isLoading, refresh, preferences } = useStatusSnapshot();
   const actions = <RefreshActions refresh={refresh} />;
+  const columns = Math.min(8, Math.max(3, Number(preferences.gridColumns) || 5));
+  const visibleMetrics = snapshot
+    ? [snapshot.cpu, snapshot.memory, snapshot.disk, snapshot.network, snapshot.battery, snapshot.codex].filter(Boolean)
+        .length
+    : 0;
+  const updatedAt = snapshot
+    ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : null;
 
   return (
-    <List
+    <Grid
       isLoading={isLoading}
-      navigationTitle="Status Dashboard"
-      searchBarPlaceholder="Filter status modules…"
+      navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
+      searchBarPlaceholder="Filter metrics…"
+      columns={columns}
+      aspectRatio="1"
+      fit={Grid.Fit.Contain}
+      inset={Grid.Inset.Large}
       throttle
     >
-      {snapshot ? (
-        <List.Section
-          title="Overview"
-          subtitle={`${enabledCount(snapshot)} modules · updated ${new Date(snapshot.updatedAt).toLocaleTimeString()}`}
-        >
-          <List.Item
-            icon={{ source: Icon.Gauge, tintColor: Color.Blue }}
-            title="Mac Status"
-            subtitle={
-              Object.keys(snapshot.errors).length === 0
-                ? "All enabled modules are responding"
-                : "Some modules need attention"
-            }
-            accessories={[
-              {
-                tag: {
-                  value: Object.keys(snapshot.errors).length === 0 ? "Live" : "Partial",
-                  color: Object.keys(snapshot.errors).length === 0 ? Color.Green : Color.Yellow,
-                },
-              },
-            ]}
-            actions={actions}
-          />
-        </List.Section>
+      {snapshot?.cpu ? (
+        <MetricTile
+          icon={Icon.Gauge}
+          color={colorForPercent(snapshot.cpu.percent)}
+          title="CPU"
+          value={`${snapshot.cpu.percent}% used`}
+          keywords={["processor", "system"]}
+          actions={actions}
+        />
       ) : null}
 
-      {snapshot && (snapshot.cpu || snapshot.memory || snapshot.disk) ? (
-        <List.Section title="System">
-          {snapshot.cpu ? (
-            <List.Item
-              icon={{ source: Icon.Gauge, tintColor: colorForPercent(snapshot.cpu.percent) }}
-              title="CPU"
-              subtitle={`${progressGlyph(snapshot.cpu.percent)}  ${snapshot.cpu.percent}% used`}
-              accessories={[{ tag: `${snapshot.cpu.percent}%` }]}
-              actions={actions}
-            />
-          ) : null}
-          {snapshot.memory ? (
-            <List.Item
-              icon={{ source: Icon.MemoryChip, tintColor: colorForPercent(snapshot.memory.percent) }}
-              title="Memory"
-              subtitle={`${formatBytes(snapshot.memory.usedBytes)} of ${formatBytes(snapshot.memory.totalBytes)} used`}
-              accessories={[{ tag: `${snapshot.memory.percent}%` }]}
-              actions={actions}
-            />
-          ) : null}
-          {snapshot.disk ? (
-            <List.Item
-              icon={{ source: Icon.HardDrive, tintColor: colorForPercent(snapshot.disk.percent) }}
-              title="Disk"
-              subtitle={`${formatBytes(snapshot.disk.usedBytes)} used · ${formatBytes(snapshot.disk.availableBytes)} available`}
-              accessories={[{ tag: `${snapshot.disk.percent}%` }]}
-              actions={actions}
-            />
-          ) : null}
-        </List.Section>
+      {snapshot?.memory ? (
+        <MetricTile
+          icon={Icon.MemoryChip}
+          color={colorForPercent(snapshot.memory.percent)}
+          title="Memory"
+          value={`${snapshot.memory.percent}% used`}
+          detail={`${formatBytes(snapshot.memory.usedBytes)} / ${formatBytes(snapshot.memory.totalBytes)}`}
+          keywords={["ram", "system"]}
+          actions={actions}
+        />
       ) : null}
 
-      {snapshot?.network ? (
-        <List.Section title="Network" subtitle={snapshot.network.interfaceName}>
-          <List.Item
-            icon={{ source: Icon.ArrowDown, tintColor: Color.Blue }}
-            title="Download"
-            subtitle={
-              snapshot.network.ready
-                ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
-                : "Sampling…"
-            }
-            actions={actions}
-          />
-          <List.Item
-            icon={{ source: Icon.ArrowUp, tintColor: Color.Purple }}
-            title="Upload"
-            subtitle={
-              snapshot.network.ready
-                ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
-                : "Sampling…"
-            }
-            actions={actions}
-          />
-        </List.Section>
+      {snapshot?.disk ? (
+        <MetricTile
+          icon={Icon.HardDrive}
+          color={colorForPercent(snapshot.disk.percent)}
+          title="Disk"
+          value={`${snapshot.disk.percent}% used`}
+          detail={`${formatBytes(snapshot.disk.availableBytes)} free`}
+          keywords={["storage", "drive", "system"]}
+          actions={actions}
+        />
       ) : null}
 
       {snapshot?.battery ? (
-        <List.Section title="Power">
-          <List.Item
-            icon={{
-              source: snapshot.battery.state === "charging" ? Icon.Bolt : Icon.Battery,
-              tintColor: colorForPercent(snapshot.battery.percent, true),
-            }}
-            title="Battery"
-            subtitle={`${snapshot.battery.state}${snapshot.battery.timeRemaining ? ` · ${snapshot.battery.timeRemaining} remaining` : ""}`}
-            accessories={[{ tag: `${snapshot.battery.percent}%` }]}
-            actions={actions}
-          />
-        </List.Section>
+        <MetricTile
+          icon={snapshot.battery.state === "charging" ? Icon.Bolt : Icon.Battery}
+          color={colorForPercent(snapshot.battery.percent, true)}
+          title="Battery"
+          value={`${snapshot.battery.percent}%`}
+          detail={`${snapshot.battery.state}${snapshot.battery.timeRemaining ? ` · ${snapshot.battery.timeRemaining} left` : ""}`}
+          keywords={["power", "charging"]}
+          actions={actions}
+        />
       ) : null}
 
-      {snapshot?.codex ? (
-        <List.Section title="Codex / GPT" subtitle={snapshot.codex.limits[0]?.planType || undefined}>
-          {snapshot.codex.limits.flatMap((limit) => [
+      {snapshot?.network ? (
+        <MetricTile
+          icon={Icon.ArrowDown}
+          color={Color.Blue}
+          title="Download"
+          value={
+            snapshot.network.ready
+              ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
+              : "Sampling…"
+          }
+          detail={snapshot.network.interfaceName}
+          keywords={["network", "internet", "receive"]}
+          actions={actions}
+        />
+      ) : null}
+
+      {snapshot?.network ? (
+        <MetricTile
+          icon={Icon.ArrowUp}
+          color={Color.Purple}
+          title="Upload"
+          value={
+            snapshot.network.ready
+              ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
+              : "Sampling…"
+          }
+          detail={snapshot.network.interfaceName}
+          keywords={["network", "internet", "send"]}
+          actions={actions}
+        />
+      ) : null}
+
+      {snapshot?.codex
+        ? snapshot.codex.limits.flatMap((limit) => [
             ...(limit.primary
               ? [
-                  <WindowRow
+                  <CodexTile
                     key={`${limit.id}-primary`}
                     provider={limit.name}
                     window={limit.primary}
@@ -211,7 +223,7 @@ export default function Dashboard() {
               : []),
             ...(limit.secondary
               ? [
-                  <WindowRow
+                  <CodexTile
                     key={`${limit.id}-secondary`}
                     provider={limit.name}
                     window={limit.secondary}
@@ -220,22 +232,32 @@ export default function Dashboard() {
                   />,
                 ]
               : []),
-          ])}
-        </List.Section>
-      ) : null}
+          ])
+        : null}
 
-      {snapshot && Object.entries(snapshot.errors).length > 0 ? (
-        <List.Section title="Unavailable Modules">
-          {Object.entries(snapshot.errors).map(([module, message]) => (
-            <ErrorRow
+      {snapshot
+        ? Object.entries(snapshot.errors).map(([module, message]) => (
+            <MetricTile
               key={module}
-              module={module as ModuleKey}
-              message={message || "Unknown error"}
+              icon={Icon.ExclamationMark}
+              color={Color.Red}
+              title={moduleTitles[module as ModuleKey]}
+              value="Unavailable"
+              detail={message || "Unknown error"}
+              keywords={["error", "unavailable"]}
               actions={actions}
             />
-          ))}
-        </List.Section>
+          ))
+        : null}
+
+      {snapshot && visibleMetrics === 0 && Object.keys(snapshot.errors).length === 0 ? (
+        <Grid.EmptyView
+          icon={Icon.Gauge}
+          title="No Metrics Enabled"
+          description="Choose the metrics and grid width in extension settings."
+          actions={actions}
+        />
       ) : null}
-    </List>
+    </Grid>
   );
 }

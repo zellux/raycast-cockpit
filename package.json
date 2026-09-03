@@ -82,6 +82,40 @@
       "default": true
     },
     {
+      "name": "gridColumns",
+      "type": "dropdown",
+      "required": false,
+      "title": "Grid Columns",
+      "description": "Choose how many metric tiles appear on each row.",
+      "default": "5",
+      "data": [
+        {
+          "title": "3 columns",
+          "value": "3"
+        },
+        {
+          "title": "4 columns",
+          "value": "4"
+        },
+        {
+          "title": "5 columns",
+          "value": "5"
+        },
+        {
+          "title": "6 columns",
+          "value": "6"
+        },
+        {
+          "title": "7 columns",
+          "value": "7"
+        },
+        {
+          "title": "8 columns",
+          "value": "8"
+        }
+      ]
+    },
+    {
       "name": "dashboardRefreshSeconds",
       "type": "dropdown",
       "required": false,

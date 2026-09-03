@@ -17,7 +17,7 @@ Every module can be enabled or disabled independently in Raycast's extension set
 
 ### Open Status Dashboard
 
-A searchable Raycast list with grouped system, network, power, and Codex information. It refreshes while open; the interval is configurable.
+A high-density Raycast grid with one glanceable tile per metric. Each tile uses a recognizable icon, a metric label, the current value, and compact supporting context. The grid width is configurable from 3 to 8 columns, and the dashboard refresh interval is configurable.
 
 ### Status Dashboard Menu Bar
 
@@ -44,6 +44,7 @@ Raycast will register the local development extension. Assign a hotkey to **Open
 Open Raycast Settings → Extensions → Status Dashboard. Available settings include:
 
 - Per-module visibility toggles
+- Grid width (3–8 columns)
 - Dashboard refresh interval
 - Network byte/bit units
 - Primary menu bar value
