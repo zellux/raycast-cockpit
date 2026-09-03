@@ -3,6 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { collectSnapshot } from "./collectors";
 import type { ModulePreferences, NetworkHistory, StatusSnapshot } from "./types";
 
+interface StatusState {
+  snapshot?: StatusSnapshot;
+  networkHistory: NetworkHistory;
+}
+
 export function useStatusSnapshot() {
   const preferences = getPreferenceValues<Preferences>();
   const modulePreferences = useMemo<ModulePreferences>(
@@ -18,8 +23,7 @@ export function useStatusSnapshot() {
     }),
     [preferences],
   );
-  const [snapshot, setSnapshot] = useState<StatusSnapshot>();
-  const [networkHistory, setNetworkHistory] = useState<NetworkHistory>({ download: [], upload: [] });
+  const [state, setState] = useState<StatusState>({ networkHistory: { download: [], upload: [] } });
   const [isLoading, setIsLoading] = useState(true);
   const running = useRef(false);
 
@@ -29,18 +33,21 @@ export function useStatusSnapshot() {
       running.current = true;
       try {
         const nextSnapshot = await collectSnapshot(modulePreferences, forceCodex);
-        setSnapshot(nextSnapshot);
-        if (nextSnapshot.network?.ready) {
-          setNetworkHistory((previous) => {
-            const history =
-              previous.interfaceName === nextSnapshot.network?.interfaceName ? previous : { download: [], upload: [] };
-            return {
-              interfaceName: nextSnapshot.network?.interfaceName,
-              download: [...history.download, nextSnapshot.network?.downloadBytesPerSecond ?? 0].slice(-18),
-              upload: [...history.upload, nextSnapshot.network?.uploadBytesPerSecond ?? 0].slice(-18),
-            };
-          });
-        }
+        setState((previous) => {
+          if (!nextSnapshot.network?.ready) return { ...previous, snapshot: nextSnapshot };
+          const history =
+            previous.networkHistory.interfaceName === nextSnapshot.network.interfaceName
+              ? previous.networkHistory
+              : { download: [], upload: [] };
+          return {
+            snapshot: nextSnapshot,
+            networkHistory: {
+              interfaceName: nextSnapshot.network.interfaceName,
+              download: [...history.download, nextSnapshot.network.downloadBytesPerSecond].slice(-18),
+              upload: [...history.upload, nextSnapshot.network.uploadBytesPerSecond].slice(-18),
+            },
+          };
+        });
       } finally {
         running.current = false;
         setIsLoading(false);
@@ -55,5 +62,11 @@ export function useStatusSnapshot() {
     return () => clearInterval(interval);
   }, [preferences.dashboardRefreshSeconds, refresh]);
 
-  return { snapshot, networkHistory, isLoading, refresh, preferences };
+  return {
+    snapshot: state.snapshot,
+    networkHistory: state.networkHistory,
+    isLoading,
+    refresh,
+    preferences,
+  };
 }

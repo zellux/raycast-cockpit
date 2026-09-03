@@ -66,6 +66,17 @@ function dataUri(svg: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
+function tileDocument(content: string): string {
+  return dataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180">${content}</svg>`);
+}
+
+function groupLabel(label?: string): string {
+  return label
+    ? `<text x="3" y="18" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="16" font-weight="700">${escapeXml(label)}</text>`
+    : "";
+}
+
 export function usageAccent(percent: number, inverted = false): string {
   const danger = inverted ? percent <= 15 : percent >= 90;
   const warning = inverted ? percent <= 75 : percent >= 50;
@@ -92,6 +103,10 @@ function ringCard(card: RingMetricCard, x: number, y: number, width: number): st
   `;
 }
 
+export function systemTile(card: RingMetricCard, group?: string): string {
+  return tileDocument(`${groupLabel(group)}${ringCard(card, 0, 28, 360)}`);
+}
+
 function sparkline(values: number[], width: number, height: number, startX: number, startY: number): string {
   const samples = values.length > 1 ? values : [0, 0];
   const maximum = Math.max(...samples, 1);
@@ -102,6 +117,38 @@ function sparkline(values: number[], width: number, height: number, startX: numb
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
+}
+
+export function networkRateTile(card: NetworkMetricCard, group?: string): string {
+  const arrow = card.direction === "down" ? "↓" : "↑";
+  const label = card.direction === "down" ? "Download" : "Upload";
+  const points = sparkline(card.history, 150, 44, 184, 85);
+
+  return tileDocument(`
+    ${groupLabel(group)}
+    <rect x="0" y="28" width="360" height="124" rx="17" fill="${palette.card}"/>
+    <text x="24" y="83" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="29" font-weight="700">${arrow}</text>
+    <text x="61" y="81" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="29" font-weight="700">${escapeXml(card.value)}</text>
+    <text x="24" y="124" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="18" font-weight="500">${label}</text>
+    <polyline points="${points}" fill="none" stroke="${card.accent}" stroke-width="4"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  `);
+}
+
+export function networkStatsTile(card: NetworkMetricCard): string {
+  const label = card.direction === "down" ? "Download traffic" : "Upload traffic";
+  return tileDocument(`
+    <rect x="0" y="28" width="360" height="124" rx="17" fill="${palette.card}"/>
+    <text x="24" y="65" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="17" font-weight="600">${label}</text>
+    <text x="24" y="103" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="28" font-weight="700">${escapeXml(card.total)}</text>
+    <text x="24" y="132" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="17" font-weight="500">Peak ${escapeXml(card.peak)}</text>
+  `);
 }
 
 function networkMetricCard(card: NetworkMetricCard, x: number, y: number, width: number): string {
@@ -142,6 +189,10 @@ function quotaMetricCard(card: QuotaMetricCard, x: number, y: number, width: num
     <text x="${x + 22}" y="${y + 101}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="17" font-weight="500">${escapeXml(card.reset)}</text>
   `;
+}
+
+export function quotaTile(card: QuotaMetricCard, group?: string): string {
+  return tileDocument(`${groupLabel(group)}${quotaMetricCard(card, 0, 28, 360)}`);
 }
 
 function sectionTitle(title: string, subtitle: string, y: number): string {
