@@ -39,7 +39,6 @@ export interface RingMetricCard {
 export interface NetworkMetricCard {
   direction: "down" | "up";
   value: string;
-  history: number[];
   peak: string;
   total: string;
   accent: string;
@@ -114,21 +113,9 @@ export function systemMetricCard(card: RingMetricCard): string {
   );
 }
 
-function sparkline(values: number[], width: number, height: number, startX: number, startY: number): string {
-  const samples = values.length > 1 ? values : [0, 0];
-  const maximum = Math.max(...samples, 1);
-  return samples
-    .map((value, index) => {
-      const x = startX + (index / (samples.length - 1)) * width;
-      const y = startY + height - (value / maximum) * height;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-}
-
 export function networkMetricCard(card: NetworkMetricCard): string {
   const arrow = card.direction === "down" ? "↓" : "↑";
-  const points = sparkline(card.history, 190, 62, 245, 126);
+  const label = card.direction === "down" ? "DOWNLOAD" : "UPLOAD";
 
   return svgFrame(
     640,
@@ -136,15 +123,17 @@ export function networkMetricCard(card: NetworkMetricCard): string {
     `
       <text x="36" y="190" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
         font-size="48" font-weight="700">${arrow}</text>
-      <text x="91" y="189" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="43" font-weight="700">${escapeXml(card.value)}</text>
-      <polyline points="${points}" fill="none" stroke="${card.accent}" stroke-width="6"
-        stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="463" y1="113" x2="463" y2="207" stroke="${palette.divider}" stroke-width="2"/>
-      <text x="491" y="153" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="23" font-weight="500">peak ${escapeXml(card.peak)}</text>
-      <text x="491" y="193" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-        font-size="23" font-weight="500">total ${escapeXml(card.total)}</text>
+      <text x="91" y="174" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="45" font-weight="700">${escapeXml(card.value)}</text>
+      <text x="93" y="211" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="18" font-weight="600" letter-spacing="1.4">${label}</text>
+      <line x1="365" y1="107" x2="365" y2="225" stroke="${palette.divider}" stroke-width="2"/>
+      <text x="398" y="139" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="18" font-weight="600" letter-spacing="1.2">PEAK</text>
+      <text x="398" y="177" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="27" font-weight="650">${escapeXml(card.peak)}</text>
+      <text x="398" y="213" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="21" font-weight="500">Total ${escapeXml(card.total)}</text>
     `,
   );
 }

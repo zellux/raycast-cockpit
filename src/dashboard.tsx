@@ -102,7 +102,6 @@ export default function Dashboard() {
           value: snapshot.network.ready
             ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
             : "Sampling…",
-          history: networkHistory.download,
           peak: formatRate(Math.max(...networkHistory.download, 0), preferences.networkUnits),
           total: formatBytes(snapshot.network.totalReceivedBytes),
           accent: accents.blue,
@@ -112,7 +111,6 @@ export default function Dashboard() {
           value: snapshot.network.ready
             ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
             : "Sampling…",
-          history: networkHistory.upload,
           peak: formatRate(Math.max(...networkHistory.upload, 0), preferences.networkUnits),
           total: formatBytes(snapshot.network.totalSentBytes),
           accent: accents.purple,
