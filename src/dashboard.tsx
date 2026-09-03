@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Detail, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
   accents,
   dashboardCard,
@@ -139,49 +139,19 @@ export default function Dashboard() {
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
   const content = dashboardCard({ system: systemCards, network: networkCards, networkSubtitle, quotas: quotaCards });
 
+  const emptyMessage =
+    Object.values(snapshot?.errors ?? {})
+      .filter(Boolean)
+      .join(" · ") || "Choose the metrics to display in extension settings.";
+
   return (
-    <Grid
+    <Detail
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
-      searchBarPlaceholder="Filter metrics…"
-      columns={1}
-      aspectRatio="16/9"
-      fit={Grid.Fit.Fill}
-      inset={Grid.Inset.Zero}
-      throttle
-    >
-      {snapshot && hasMetrics ? (
-        <Grid.Item
-          content={content}
-          keywords={[
-            "system",
-            "cpu",
-            "memory",
-            "disk",
-            "battery",
-            "network",
-            "download",
-            "upload",
-            "codex",
-            "gpt",
-            "token",
-            "quota",
-          ]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot && !hasMetrics ? (
-        <Grid.EmptyView
-          icon={Icon.Gauge}
-          title="No Metrics Available"
-          description={
-            Object.values(snapshot.errors).filter(Boolean).join(" · ") ||
-            "Choose the metrics to display in extension settings."
-          }
-          actions={actions}
-        />
-      ) : null}
-    </Grid>
+      markdown={
+        snapshot && hasMetrics ? `![Status Dashboard](${content})` : `# No Metrics Available\n\n${emptyMessage}`
+      }
+      actions={actions}
+    />
   );
 }
