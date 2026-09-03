@@ -97,26 +97,28 @@ function systemIcon(icon: SystemMetricIcon, accent: string): string {
 
 export function systemMetricCard(card: RingMetricCard): string {
   return svgFrame(`
-    <g transform="translate(24 67)">${systemIcon(card.icon, card.accent)}</g>
-    <text x="87" y="82" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="44" font-weight="700">${escapeXml(card.value)}</text>
-    <text x="87" y="123" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="27" font-weight="500">${escapeXml(card.detail)}</text>
+    <g transform="translate(20 18) scale(.7)">${systemIcon(card.icon, card.accent)}</g>
+    <text x="62" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="23" font-weight="650">${escapeXml(card.label)}</text>
+    <text x="20" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="46" font-weight="700">${escapeXml(card.value)}</text>
+    <text x="20" y="146" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="21" font-weight="500">${escapeXml(card.detail)}</text>
   `);
 }
 
 export function networkMetricCard(card: NetworkMetricCard): string {
-  const arrow = card.direction === "down" ? "↓" : "↑";
   const label = card.direction === "down" ? "Download" : "Upload";
+  const arrow = card.direction === "down" ? '<path d="M16 2v31M7 24l9 9 9-9"/>' : '<path d="M16 33V2M7 11l9-9 9 9"/>';
 
   return svgFrame(`
-    <text x="22" y="104" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="50" font-weight="700">${arrow}</text>
-    <text x="70" y="75" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="36" font-weight="700">${escapeXml(card.value)}</text>
-    <text x="71" y="111" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="24" font-weight="600">${label}</text>
-    <text x="71" y="145" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    <g transform="translate(20 17)" fill="none" stroke="${card.accent}" stroke-width="5"
+      stroke-linecap="round" stroke-linejoin="round">${arrow}</g>
+    <text x="61" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="23" font-weight="650">${label}</text>
+    <text x="20" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="40" font-weight="700">${escapeXml(card.value)}</text>
+    <text x="20" y="146" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="21" font-weight="500">Peak ${escapeXml(card.peak)}</text>
   `);
 }

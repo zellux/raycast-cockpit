@@ -86,7 +86,7 @@ export default function Dashboard() {
       label: "CPU",
       percent: snapshot.cpu.percent,
       value: `${snapshot.cpu.percent}%`,
-      detail: "CPU",
+      detail: "Current usage",
       accent: usageAccent(snapshot.cpu.percent),
     });
   }
@@ -116,7 +116,7 @@ export default function Dashboard() {
       label: "Uptime",
       percent: 0,
       value: formatDuration(snapshot.uptime.seconds),
-      detail: "Uptime",
+      detail: "Since restart",
       accent: accents.blue,
     });
   }
