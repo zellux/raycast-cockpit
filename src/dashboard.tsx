@@ -24,6 +24,14 @@ function shortProviderName(provider: string): string {
   return provider.replace(/^GPT-[^-]+-Codex-/i, "");
 }
 
+function formatBytePair(usedBytes: number, totalBytes: number): string {
+  const [usedValue, usedUnit] = formatBytes(usedBytes).split(" ");
+  const [totalValue, totalUnit] = formatBytes(totalBytes).split(" ");
+  return usedUnit === totalUnit
+    ? `${usedValue}/${totalValue} ${usedUnit}`
+    : `${formatBytes(usedBytes)}/${formatBytes(totalBytes)}`;
+}
+
 function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promise<void> }) {
   return (
     <ActionPanel>
@@ -45,7 +53,7 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
 function MetricTile({
   icon,
   color,
-  title,
+  label,
   value,
   detail,
   keywords,
@@ -53,7 +61,7 @@ function MetricTile({
 }: {
   icon: Icon;
   color: Color;
-  title: string;
+  label: string;
   value: string;
   detail?: string;
   keywords?: string[];
@@ -62,8 +70,8 @@ function MetricTile({
   return (
     <Grid.Item
       content={{ source: icon, tintColor: color }}
-      title={title}
-      subtitle={detail ? `${value} · ${detail}` : value}
+      title={value}
+      subtitle={detail ? `${label} · ${detail}` : label}
       keywords={keywords}
       actions={actions}
     />
@@ -88,9 +96,9 @@ function CodexTile({
     <MetricTile
       icon={Icon.Stars}
       color={colorForPercent(remaining, true)}
-      title={`${shortProviderName(provider)} · ${windowName}`}
+      label={`${shortProviderName(provider)} · ${windowName}`}
       value={`${remaining}% remaining`}
-      detail={formatResetTime(window.resetsAt)}
+      detail={formatResetTime(window.resetsAt).split(" · ")[0]}
       keywords={["codex", "gpt", provider, kind, windowName]}
       actions={actions}
     />
@@ -124,16 +132,16 @@ export default function Dashboard() {
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
       searchBarPlaceholder="Filter metrics…"
       columns={columns}
-      aspectRatio="1"
+      aspectRatio="16/9"
       fit={Grid.Fit.Contain}
-      inset={Grid.Inset.Large}
+      inset={Grid.Inset.Medium}
       throttle
     >
       {snapshot?.cpu ? (
         <MetricTile
           icon={Icon.Gauge}
           color={colorForPercent(snapshot.cpu.percent)}
-          title="CPU"
+          label="CPU"
           value={`${snapshot.cpu.percent}% used`}
           keywords={["processor", "system"]}
           actions={actions}
@@ -144,9 +152,9 @@ export default function Dashboard() {
         <MetricTile
           icon={Icon.MemoryChip}
           color={colorForPercent(snapshot.memory.percent)}
-          title="Memory"
+          label="Memory"
           value={`${snapshot.memory.percent}% used`}
-          detail={`${formatBytes(snapshot.memory.usedBytes)} / ${formatBytes(snapshot.memory.totalBytes)}`}
+          detail={formatBytePair(snapshot.memory.usedBytes, snapshot.memory.totalBytes)}
           keywords={["ram", "system"]}
           actions={actions}
         />
@@ -156,7 +164,7 @@ export default function Dashboard() {
         <MetricTile
           icon={Icon.HardDrive}
           color={colorForPercent(snapshot.disk.percent)}
-          title="Disk"
+          label="Disk"
           value={`${snapshot.disk.percent}% used`}
           detail={`${formatBytes(snapshot.disk.availableBytes)} free`}
           keywords={["storage", "drive", "system"]}
@@ -168,7 +176,7 @@ export default function Dashboard() {
         <MetricTile
           icon={snapshot.battery.state === "charging" ? Icon.Bolt : Icon.Battery}
           color={colorForPercent(snapshot.battery.percent, true)}
-          title="Battery"
+          label="Battery"
           value={`${snapshot.battery.percent}%`}
           detail={`${snapshot.battery.state}${snapshot.battery.timeRemaining ? ` · ${snapshot.battery.timeRemaining} left` : ""}`}
           keywords={["power", "charging"]}
@@ -180,7 +188,7 @@ export default function Dashboard() {
         <MetricTile
           icon={Icon.ArrowDown}
           color={Color.Blue}
-          title="Download"
+          label="Download"
           value={
             snapshot.network.ready
               ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
@@ -196,7 +204,7 @@ export default function Dashboard() {
         <MetricTile
           icon={Icon.ArrowUp}
           color={Color.Purple}
-          title="Upload"
+          label="Upload"
           value={
             snapshot.network.ready
               ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
@@ -241,7 +249,7 @@ export default function Dashboard() {
               key={module}
               icon={Icon.ExclamationMark}
               color={Color.Red}
-              title={moduleTitles[module as ModuleKey]}
+              label={moduleTitles[module as ModuleKey]}
               value="Unavailable"
               detail={message || "Unknown error"}
               keywords={["error", "unavailable"]}
