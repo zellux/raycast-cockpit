@@ -1,10 +1,12 @@
-import { Action, ActionPanel, Detail, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
   accents,
-  dashboardCard,
+  networkMetricCard,
   type NetworkMetricCard,
+  quotaMetricCard,
   type QuotaMetricCard,
   type RingMetricCard,
+  systemMetricCard,
   usageAccent,
 } from "./lib/cards";
 import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
@@ -45,9 +47,7 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
 }
 
 export default function Dashboard() {
-  const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot({
-    minimumPublishIntervalSeconds: 30,
-  });
+  const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot();
   const actions = <RefreshActions refresh={refresh} />;
   const updatedAt = snapshot
     ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
@@ -56,6 +56,7 @@ export default function Dashboard() {
   const systemCards: RingMetricCard[] = [];
   if (snapshot?.cpu) {
     systemCards.push({
+      icon: "cpu",
       label: "CPU",
       percent: snapshot.cpu.percent,
       value: `${snapshot.cpu.percent}%`,
@@ -65,6 +66,7 @@ export default function Dashboard() {
   }
   if (snapshot?.memory) {
     systemCards.push({
+      icon: "memory",
       label: "Memory",
       percent: snapshot.memory.percent,
       value: `${snapshot.memory.percent}%`,
@@ -74,6 +76,7 @@ export default function Dashboard() {
   }
   if (snapshot?.disk) {
     systemCards.push({
+      icon: "disk",
       label: "Disk",
       percent: snapshot.disk.percent,
       value: `${snapshot.disk.percent}%`,
@@ -83,6 +86,7 @@ export default function Dashboard() {
   }
   if (snapshot?.battery) {
     systemCards.push({
+      icon: "battery",
       label: "Battery",
       percent: snapshot.battery.percent,
       value: `${snapshot.battery.percent}%`,
@@ -118,15 +122,19 @@ export default function Dashboard() {
 
   const quotaCards: QuotaMetricCard[] = snapshot?.codex
     ? snapshot.codex.limits.flatMap((limit) =>
-        [limit.primary, limit.secondary]
-          .filter((window) => window != null)
-          .map((window) => {
-            const remaining = remainingPercent(window);
-            const windowName = formatWindowName(window.windowDurationMins).replace(/ window$/i, "");
+        [
+          { kind: "primary", window: limit.primary },
+          { kind: "secondary", window: limit.secondary },
+        ]
+          .filter((entry) => entry.window != null)
+          .map(({ kind, window }) => {
+            const remaining = remainingPercent(window!);
+            const windowName = formatWindowName(window!.windowDurationMins).replace(/ window$/i, "");
             return {
+              id: `${limit.id}-${kind}`,
               label: `${shortProviderName(limit.name)} · ${windowName}`,
               percent: remaining,
-              reset: `Resets in ${formatResetTime(window.resetsAt).split(" · ")[0]}`,
+              reset: `Resets in ${formatResetTime(window!.resetsAt).split(" · ")[0]}`,
               accent: usageAccent(remaining, true),
             };
           }),
@@ -139,20 +147,69 @@ export default function Dashboard() {
     ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s` : " · sampling"}`
     : "";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
-  const content = dashboardCard({ system: systemCards, network: networkCards, networkSubtitle, quotas: quotaCards });
   const emptyMessage =
     Object.values(snapshot?.errors ?? {})
       .filter(Boolean)
       .join(" · ") || "Choose the metrics to display in extension settings.";
 
   return (
-    <Detail
+    <Grid
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
-      markdown={
-        snapshot && hasMetrics ? `![Status Dashboard](${content})` : `# No Metrics Available\n\n${emptyMessage}`
-      }
-      actions={actions}
-    />
+      searchBarPlaceholder="Filter metrics…"
+      columns={3}
+      aspectRatio="3/2"
+      fit={Grid.Fit.Fill}
+      inset={Grid.Inset.Zero}
+    >
+      {!hasMetrics ? (
+        <Grid.EmptyView title="No Metrics Available" description={emptyMessage} icon={Icon.Gauge} />
+      ) : null}
+
+      {systemCards.length > 0 ? (
+        <Grid.Section title="System" subtitle={`${systemCards.length} metrics`} columns={4} aspectRatio="3/2">
+          {systemCards.map((card) => (
+            <Grid.Item
+              key={card.label}
+              id={`system-${card.label.toLowerCase()}`}
+              content={{ value: systemMetricCard(card), tooltip: `${card.label}: ${card.value} · ${card.detail}` }}
+              keywords={[card.label, card.value, card.detail]}
+              actions={actions}
+            />
+          ))}
+        </Grid.Section>
+      ) : null}
+
+      {networkCards.length > 0 ? (
+        <Grid.Section title="Network" subtitle={networkSubtitle} columns={2} aspectRatio="16/9">
+          {networkCards.map((card) => {
+            const label = card.direction === "down" ? "Download" : "Upload";
+            return (
+              <Grid.Item
+                key={card.direction}
+                id={`network-${card.direction}`}
+                content={{ value: networkMetricCard(card), tooltip: `${label}: ${card.value}` }}
+                keywords={[label, card.value, card.peak, card.total]}
+                actions={actions}
+              />
+            );
+          })}
+        </Grid.Section>
+      ) : null}
+
+      {quotaCards.length > 0 ? (
+        <Grid.Section title="Token quota" subtitle={`${quotaCards.length} windows`} columns={3} aspectRatio="3/2">
+          {quotaCards.map((card) => (
+            <Grid.Item
+              key={card.id}
+              id={`quota-${card.id}`}
+              content={{ value: quotaMetricCard(card), tooltip: `${card.label}: ${card.percent}% · ${card.reset}` }}
+              keywords={[card.label, `${card.percent}%`, card.reset]}
+              actions={actions}
+            />
+          ))}
+        </Grid.Section>
+      ) : null}
+    </Grid>
   );
 }

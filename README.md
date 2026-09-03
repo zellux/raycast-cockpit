@@ -17,7 +17,7 @@ Every module can be enabled or disabled independently in Raycast's extension set
 
 ### Open Status Dashboard
 
-A single-screen Raycast dashboard with grouped system rings, live network sparklines, and Codex quota progress bars. Metrics are sampled at the configured interval; the composed dashboard redraws at most every 30 seconds to avoid image flicker. Manual refresh redraws immediately.
+A single-screen native Raycast grid with separate system, network, and Codex quota cards. Each card has a stable grid identity, so live updates replace only the metric card that changed instead of redrawing one dashboard-sized image. Metrics update at the configured interval, and manual refresh updates them immediately.
 
 ### Status Dashboard Menu Bar
 
@@ -53,7 +53,7 @@ Open Raycast Settings → Extensions → Status Dashboard. Available settings in
 
 ```text
 src/
-  dashboard.tsx       Full Raycast dashboard
+  dashboard.tsx       Native Raycast grid dashboard
   menu-bar.tsx        Compact menu bar surface
   lib/
     collectors.ts     Data collection adapters

@@ -12,7 +12,7 @@ const palette =
     : {
         card: "#E9E9E7",
         primary: "#1C1C1E",
-        secondary: "#858585",
+        secondary: "#737373",
         track: "#D0D0CE",
         divider: "#C8C8C6",
       };
@@ -25,7 +25,10 @@ export const accents = {
   purple: "#7657E8",
 };
 
+export type SystemMetricIcon = "cpu" | "memory" | "disk" | "battery";
+
 export interface RingMetricCard {
+  icon: SystemMetricIcon;
   label: string;
   percent: number;
   value: string;
@@ -43,6 +46,7 @@ export interface NetworkMetricCard {
 }
 
 export interface QuotaMetricCard {
+  id: string;
   label: string;
   percent: number;
   reset: string;
@@ -66,30 +70,48 @@ function dataUri(svg: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
+function svgFrame(width: number, height: number, content: string): string {
+  return dataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
+      <rect width="${width}" height="${height}" rx="22" fill="${palette.card}"/>
+      ${content}
+    </svg>
+  `);
+}
+
 export function usageAccent(percent: number, inverted = false): string {
   const danger = inverted ? percent <= 15 : percent >= 90;
   const warning = inverted ? percent <= 75 : percent >= 50;
   return danger ? accents.red : warning ? accents.orange : accents.green;
 }
 
-function ringCard(card: RingMetricCard, x: number, y: number, width: number): string {
-  const radius = 34;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (Math.max(0, Math.min(100, card.percent)) / 100) * circumference;
-  const ringX = x + 58;
-  const ringY = y + 62;
-  const textX = x + 112;
+function systemIcon(icon: SystemMetricIcon, accent: string): string {
+  const common = `fill="none" stroke="${accent}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"`;
 
-  return `
-    <rect x="${x}" y="${y}" width="${width}" height="124" rx="17" fill="${palette.card}"/>
-    <circle cx="${ringX}" cy="${ringY}" r="${radius}" fill="none" stroke="${palette.track}" stroke-width="10"/>
-    <circle cx="${ringX}" cy="${ringY}" r="${radius}" fill="none" stroke="${card.accent}" stroke-width="10"
-      stroke-linecap="round" stroke-dasharray="${progress} ${circumference}" transform="rotate(-90 ${ringX} ${ringY})"/>
-    <text x="${textX}" y="${y + 56}" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="35" font-weight="700">${escapeXml(card.value)}</text>
-    <text x="${textX}" y="${y + 88}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="22" font-weight="500">${escapeXml(card.detail)}</text>
-  `;
+  switch (icon) {
+    case "cpu":
+      return `<g ${common}><rect x="0" y="3" width="54" height="38" rx="5"/><path d="M18 53h18M27 41v12"/></g>`;
+    case "memory":
+      return `<g ${common}><rect x="6" y="5" width="42" height="42" rx="6"/><path d="M17 17h20v18H17zM0 16h6M0 28h6M0 40h6M48 16h6M48 28h6M48 40h6"/></g>`;
+    case "disk":
+      return `<g ${common}><rect x="2" y="7" width="50" height="40" rx="8"/><path d="M2 34h50"/><circle cx="40" cy="40" r="2" fill="${accent}" stroke="none"/></g>`;
+    case "battery":
+      return `<g ${common}><rect x="1" y="10" width="47" height="34" rx="6"/><path d="M52 21v12M10 27h27"/></g>`;
+  }
+}
+
+export function systemMetricCard(card: RingMetricCard): string {
+  return svgFrame(
+    360,
+    240,
+    `
+      <g transform="translate(35 93)">${systemIcon(card.icon, card.accent)}</g>
+      <text x="112" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="48" font-weight="700">${escapeXml(card.value)}</text>
+      <text x="112" y="153" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="25" font-weight="500">${escapeXml(card.detail)}</text>
+    `,
+  );
 }
 
 function sparkline(values: number[], width: number, height: number, startX: number, startY: number): string {
@@ -104,94 +126,45 @@ function sparkline(values: number[], width: number, height: number, startX: numb
     .join(" ");
 }
 
-function networkMetricCard(card: NetworkMetricCard, x: number, y: number, width: number): string {
+export function networkMetricCard(card: NetworkMetricCard): string {
   const arrow = card.direction === "down" ? "↓" : "↑";
-  const sparklineStart = x + 188;
-  const sparklineWidth = Math.max(120, width - 420);
-  const dividerX = sparklineStart + sparklineWidth + 22;
-  const detailsX = dividerX + 24;
-  const points = sparkline(card.history, sparklineWidth, 38, sparklineStart, y + 48);
+  const points = sparkline(card.history, 190, 62, 245, 126);
 
-  return `
-    <rect x="${x}" y="${y}" width="${width}" height="108" rx="17" fill="${palette.card}"/>
-    <text x="${x + 25}" y="${y + 67}" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="28" font-weight="700">${arrow}</text>
-    <text x="${x + 62}" y="${y + 66}" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="29" font-weight="700">${escapeXml(card.value)}</text>
-    <polyline points="${points}" fill="none" stroke="${card.accent}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="${dividerX}" y1="${y + 28}" x2="${dividerX}" y2="${y + 82}" stroke="${palette.divider}" stroke-width="2"/>
-    <text x="${detailsX}" y="${y + 48}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="19" font-weight="500">peak ${escapeXml(card.peak)}</text>
-    <text x="${detailsX}" y="${y + 76}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="19" font-weight="500">total ${escapeXml(card.total)}</text>
-  `;
+  return svgFrame(
+    640,
+    360,
+    `
+      <text x="36" y="190" fill="${card.accent}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="48" font-weight="700">${arrow}</text>
+      <text x="91" y="189" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="43" font-weight="700">${escapeXml(card.value)}</text>
+      <polyline points="${points}" fill="none" stroke="${card.accent}" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="463" y1="113" x2="463" y2="207" stroke="${palette.divider}" stroke-width="2"/>
+      <text x="491" y="153" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="23" font-weight="500">peak ${escapeXml(card.peak)}</text>
+      <text x="491" y="193" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="23" font-weight="500">total ${escapeXml(card.total)}</text>
+    `,
+  );
 }
 
-function quotaMetricCard(card: QuotaMetricCard, x: number, y: number, width: number): string {
+export function quotaMetricCard(card: QuotaMetricCard): string {
   const normalized = Math.max(0, Math.min(100, card.percent));
-  const progressWidth = (normalized / 100) * (width - 44);
+  const progressWidth = (normalized / 100) * 372;
 
-  return `
-    <rect x="${x}" y="${y}" width="${width}" height="126" rx="17" fill="${palette.card}"/>
-    <text x="${x + 22}" y="${y + 39}" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="24" font-weight="650">${escapeXml(card.label)}</text>
-    <text x="${x + width - 22}" y="${y + 39}" text-anchor="end" fill="${palette.primary}"
-      font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700">${normalized}%</text>
-    <rect x="${x + 22}" y="${y + 61}" width="${width - 44}" height="8" rx="4" fill="${palette.track}"/>
-    <rect x="${x + 22}" y="${y + 61}" width="${progressWidth}" height="8" rx="4" fill="${card.accent}"/>
-    <text x="${x + 22}" y="${y + 101}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="20" font-weight="500">${escapeXml(card.reset)}</text>
-  `;
-}
-
-function sectionTitle(title: string, subtitle: string, y: number): string {
-  return `
-    <text x="16" y="${y}" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="22" font-weight="700">${escapeXml(title)}</text>
-    <text x="${16 + title.length * 12 + 16}" y="${y}" fill="${palette.secondary}" opacity="0.72"
-      font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="20" font-weight="500">${escapeXml(subtitle)}</text>
-  `;
-}
-
-export function dashboardCard({
-  system,
-  network,
-  networkSubtitle,
-  quotas,
-}: {
-  system: RingMetricCard[];
-  network: NetworkMetricCard[];
-  networkSubtitle: string;
-  quotas: QuotaMetricCard[];
-}): string {
-  const contentWidth = 1168;
-  const startX = 16;
-  const gap = 14;
-  const systemWidth = (contentWidth - gap * 3) / 4;
-  const networkWidth = (contentWidth - gap) / 2;
-  const quotaWidth = (contentWidth - gap * 2) / 3;
-
-  const systemCards = system
-    .slice(0, 4)
-    .map((card, index) => ringCard(card, startX + index * (systemWidth + gap), 50, systemWidth))
-    .join("");
-  const networkCards = network
-    .slice(0, 2)
-    .map((card, index) => networkMetricCard(card, startX + index * (networkWidth + gap), 222, networkWidth))
-    .join("");
-  const quotaCards = quotas
-    .slice(0, 3)
-    .map((card, index) => quotaMetricCard(card, startX + index * (quotaWidth + gap), 390, quotaWidth))
-    .join("");
-
-  return dataUri(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
-      ${system.length > 0 ? sectionTitle("System", `${system.length} metrics`, 31) : ""}
-      ${systemCards}
-      ${network.length > 0 ? sectionTitle("Network", networkSubtitle, 205) : ""}
-      ${networkCards}
-      ${quotas.length > 0 ? sectionTitle("Token quota", `${quotas.length} windows`, 372) : ""}
-      ${quotaCards}
-    </svg>
-  `);
+  return svgFrame(
+    420,
+    280,
+    `
+      <text x="24" y="72" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="27" font-weight="650">${escapeXml(card.label)}</text>
+      <text x="396" y="72" text-anchor="end" fill="${palette.primary}"
+        font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="700">${normalized}%</text>
+      <rect x="24" y="112" width="372" height="10" rx="5" fill="${palette.track}"/>
+      <rect x="24" y="112" width="${progressWidth}" height="10" rx="5" fill="${card.accent}"/>
+      <text x="24" y="173" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="23" font-weight="500">${escapeXml(card.reset)}</text>
+    `,
+  );
 }

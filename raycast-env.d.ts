@@ -20,7 +20,7 @@ type ExtensionPreferences = {
   "showBattery": boolean,
   /** Codex / GPT - Include remaining Codex usage windows from the signed-in Codex CLI. */
   "showCodex": boolean,
-  /** Dashboard Sampling - How often metrics are sampled. The dashboard redraws at most every 30 seconds to avoid flicker; manual refresh redraws immediately. */
+  /** Dashboard Refresh - How often live metric cards update. Manual refresh updates them immediately. */
   "dashboardRefreshSeconds": "2" | "5" | "10" | "30",
   /** Network Units - Display network throughput as bytes or bits per second. */
   "networkUnits": "bytes" | "bits",

@@ -85,8 +85,8 @@
       "name": "dashboardRefreshSeconds",
       "type": "dropdown",
       "required": false,
-      "title": "Dashboard Sampling",
-      "description": "How often metrics are sampled. The dashboard redraws at most every 30 seconds to avoid flicker; manual refresh redraws immediately.",
+      "title": "Dashboard Refresh",
+      "description": "How often live metric cards update. Manual refresh updates them immediately.",
       "default": "5",
       "data": [
         {

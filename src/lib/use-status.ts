@@ -8,7 +8,7 @@ interface StatusState {
   networkHistory: NetworkHistory;
 }
 
-export function useStatusSnapshot({ minimumPublishIntervalSeconds = 0 } = {}) {
+export function useStatusSnapshot() {
   const preferences = getPreferenceValues<Preferences>();
   const modulePreferences = useMemo<ModulePreferences>(
     () => ({
@@ -27,7 +27,6 @@ export function useStatusSnapshot({ minimumPublishIntervalSeconds = 0 } = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const running = useRef(false);
   const networkHistoryRef = useRef<NetworkHistory>({ download: [], upload: [] });
-  const lastPublishedAt = useRef(0);
 
   const refresh = useCallback(
     async (forceCodex = false) => {
@@ -47,24 +46,13 @@ export function useStatusSnapshot({ minimumPublishIntervalSeconds = 0 } = {}) {
           };
         }
 
-        const publishIntervalSeconds = Math.max(
-          minimumPublishIntervalSeconds,
-          Number(preferences.dashboardRefreshSeconds),
-        );
-        const shouldPublish =
-          forceCodex ||
-          lastPublishedAt.current === 0 ||
-          Date.now() - lastPublishedAt.current >= publishIntervalSeconds * 1000;
-        if (shouldPublish) {
-          lastPublishedAt.current = Date.now();
-          setState({ snapshot: nextSnapshot, networkHistory: networkHistoryRef.current });
-        }
+        setState({ snapshot: nextSnapshot, networkHistory: networkHistoryRef.current });
       } finally {
         running.current = false;
         setIsLoading(false);
       }
     },
-    [minimumPublishIntervalSeconds, modulePreferences, preferences.dashboardRefreshSeconds],
+    [modulePreferences],
   );
 
   useEffect(() => {
