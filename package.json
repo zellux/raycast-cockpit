@@ -1,0 +1,186 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "status-dashboard",
+  "title": "Status Dashboard",
+  "description": "A configurable Mac status dashboard for system, network, battery, and Codex usage.",
+  "icon": "extension-icon.png",
+  "author": "zellux",
+  "categories": [
+    "System"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "dashboard",
+      "title": "Open Status Dashboard",
+      "subtitle": "Mac and Codex status at a glance",
+      "description": "View the enabled system, network, battery, and Codex metrics.",
+      "mode": "view"
+    },
+    {
+      "name": "menu-bar",
+      "title": "Status Dashboard Menu Bar",
+      "subtitle": "Compact status in the menu bar",
+      "description": "Show enabled metrics in a compact menu bar item.",
+      "mode": "menu-bar",
+      "interval": "1m"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "showCpu",
+      "type": "checkbox",
+      "required": false,
+      "title": "CPU",
+      "description": "Include current CPU utilization in the dashboard and menu bar.",
+      "label": "Show CPU usage",
+      "default": true
+    },
+    {
+      "name": "showMemory",
+      "type": "checkbox",
+      "required": false,
+      "title": "Memory",
+      "description": "Include current memory pressure and utilization.",
+      "label": "Show memory usage",
+      "default": true
+    },
+    {
+      "name": "showDisk",
+      "type": "checkbox",
+      "required": false,
+      "title": "Disk",
+      "description": "Include usage for the macOS root disk.",
+      "label": "Show disk usage",
+      "default": true
+    },
+    {
+      "name": "showNetwork",
+      "type": "checkbox",
+      "required": false,
+      "title": "Network",
+      "description": "Include live upload and download throughput for the default interface.",
+      "label": "Show upload and download speed",
+      "default": true
+    },
+    {
+      "name": "showBattery",
+      "type": "checkbox",
+      "required": false,
+      "title": "Battery",
+      "description": "Include battery percentage, charging state, and estimated time remaining.",
+      "label": "Show battery status",
+      "default": true
+    },
+    {
+      "name": "showCodex",
+      "type": "checkbox",
+      "required": false,
+      "title": "Codex / GPT",
+      "description": "Include remaining Codex usage windows from the signed-in Codex CLI.",
+      "label": "Show remaining Codex usage",
+      "default": true
+    },
+    {
+      "name": "dashboardRefreshSeconds",
+      "type": "dropdown",
+      "required": false,
+      "title": "Dashboard Refresh",
+      "description": "How often the open dashboard refreshes. Codex usage is cached for one minute.",
+      "default": "5",
+      "data": [
+        {
+          "title": "Every 2 seconds",
+          "value": "2"
+        },
+        {
+          "title": "Every 5 seconds",
+          "value": "5"
+        },
+        {
+          "title": "Every 10 seconds",
+          "value": "10"
+        },
+        {
+          "title": "Every 30 seconds",
+          "value": "30"
+        }
+      ]
+    },
+    {
+      "name": "networkUnits",
+      "type": "dropdown",
+      "required": false,
+      "title": "Network Units",
+      "description": "Display network throughput as bytes or bits per second.",
+      "default": "bytes",
+      "data": [
+        {
+          "title": "Bytes per second",
+          "value": "bytes"
+        },
+        {
+          "title": "Bits per second",
+          "value": "bits"
+        }
+      ]
+    },
+    {
+      "name": "menuBarPrimary",
+      "type": "dropdown",
+      "required": false,
+      "title": "Menu Bar Summary",
+      "description": "Choose the primary value displayed beside the menu bar icon.",
+      "default": "network",
+      "data": [
+        {
+          "title": "Network speed",
+          "value": "network"
+        },
+        {
+          "title": "CPU usage",
+          "value": "cpu"
+        },
+        {
+          "title": "Memory usage",
+          "value": "memory"
+        },
+        {
+          "title": "Codex remaining",
+          "value": "codex"
+        },
+        {
+          "title": "Icon only",
+          "value": "icon"
+        }
+      ]
+    },
+    {
+      "name": "codexPath",
+      "type": "textfield",
+      "required": false,
+      "title": "Codex CLI Path",
+      "description": "Absolute path to the Codex CLI executable.",
+      "default": "/opt/homebrew/bin/codex",
+      "placeholder": "/opt/homebrew/bin/codex"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^2.2.0",
+    "@raycast/utils": "^2.3.1"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.0.10",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.8.0"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix"
+  }
+}
