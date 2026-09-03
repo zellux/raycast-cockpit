@@ -133,23 +133,46 @@ export async function collectNetwork(): Promise<NetworkMetric> {
   await LocalStorage.setItem(NETWORK_SAMPLE_KEY, JSON.stringify(current));
 
   if (!previousText) {
-    return { interfaceName, downloadBytesPerSecond: 0, uploadBytesPerSecond: 0, ready: false };
+    return {
+      interfaceName,
+      downloadBytesPerSecond: 0,
+      uploadBytesPerSecond: 0,
+      totalReceivedBytes: counters.receivedBytes,
+      totalSentBytes: counters.sentBytes,
+      ready: false,
+    };
   }
 
   try {
     const previous = JSON.parse(previousText) as NetworkSample;
     const elapsedSeconds = (timestamp - previous.timestamp) / 1000;
     if (previous.interfaceName !== interfaceName || elapsedSeconds <= 0 || elapsedSeconds > 180) {
-      return { interfaceName, downloadBytesPerSecond: 0, uploadBytesPerSecond: 0, ready: false };
+      return {
+        interfaceName,
+        downloadBytesPerSecond: 0,
+        uploadBytesPerSecond: 0,
+        totalReceivedBytes: counters.receivedBytes,
+        totalSentBytes: counters.sentBytes,
+        ready: false,
+      };
     }
     return {
       interfaceName,
       downloadBytesPerSecond: Math.max(0, (current.receivedBytes - previous.receivedBytes) / elapsedSeconds),
       uploadBytesPerSecond: Math.max(0, (current.sentBytes - previous.sentBytes) / elapsedSeconds),
+      totalReceivedBytes: counters.receivedBytes,
+      totalSentBytes: counters.sentBytes,
       ready: true,
     };
   } catch {
-    return { interfaceName, downloadBytesPerSecond: 0, uploadBytesPerSecond: 0, ready: false };
+    return {
+      interfaceName,
+      downloadBytesPerSecond: 0,
+      uploadBytesPerSecond: 0,
+      totalReceivedBytes: counters.receivedBytes,
+      totalSentBytes: counters.sentBytes,
+      ready: false,
+    };
   }
 }
 

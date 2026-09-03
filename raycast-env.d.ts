@@ -20,8 +20,6 @@ type ExtensionPreferences = {
   "showBattery": boolean,
   /** Codex / GPT - Include remaining Codex usage windows from the signed-in Codex CLI. */
   "showCodex": boolean,
-  /** Grid Columns - Choose how many metric tiles appear on each row. */
-  "gridColumns": "3" | "4" | "5" | "6" | "7" | "8",
   /** Dashboard Refresh - How often the open dashboard refreshes. Codex usage is cached for one minute. */
   "dashboardRefreshSeconds": "2" | "5" | "10" | "30",
   /** Network Units - Display network throughput as bytes or bits per second. */

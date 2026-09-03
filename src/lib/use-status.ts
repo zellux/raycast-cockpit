@@ -1,7 +1,7 @@
 import { getPreferenceValues } from "@raycast/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { collectSnapshot } from "./collectors";
-import type { ModulePreferences, StatusSnapshot } from "./types";
+import type { ModulePreferences, NetworkHistory, StatusSnapshot } from "./types";
 
 export function useStatusSnapshot() {
   const preferences = getPreferenceValues<Preferences>();
@@ -19,6 +19,7 @@ export function useStatusSnapshot() {
     [preferences],
   );
   const [snapshot, setSnapshot] = useState<StatusSnapshot>();
+  const [networkHistory, setNetworkHistory] = useState<NetworkHistory>({ download: [], upload: [] });
   const [isLoading, setIsLoading] = useState(true);
   const running = useRef(false);
 
@@ -27,7 +28,19 @@ export function useStatusSnapshot() {
       if (running.current) return;
       running.current = true;
       try {
-        setSnapshot(await collectSnapshot(modulePreferences, forceCodex));
+        const nextSnapshot = await collectSnapshot(modulePreferences, forceCodex);
+        setSnapshot(nextSnapshot);
+        if (nextSnapshot.network?.ready) {
+          setNetworkHistory((previous) => {
+            const history =
+              previous.interfaceName === nextSnapshot.network?.interfaceName ? previous : { download: [], upload: [] };
+            return {
+              interfaceName: nextSnapshot.network?.interfaceName,
+              download: [...history.download, nextSnapshot.network?.downloadBytesPerSecond ?? 0].slice(-18),
+              upload: [...history.upload, nextSnapshot.network?.uploadBytesPerSecond ?? 0].slice(-18),
+            };
+          });
+        }
       } finally {
         running.current = false;
         setIsLoading(false);
@@ -42,5 +55,5 @@ export function useStatusSnapshot() {
     return () => clearInterval(interval);
   }, [preferences.dashboardRefreshSeconds, refresh]);
 
-  return { snapshot, isLoading, refresh, preferences };
+  return { snapshot, networkHistory, isLoading, refresh, preferences };
 }

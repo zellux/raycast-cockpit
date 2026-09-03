@@ -1,24 +1,14 @@
+import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
-  Action,
-  ActionPanel,
-  Color,
-  Grid,
-  Icon,
-  Keyboard,
-  openExtensionPreferences,
-  showToast,
-  Toast,
-} from "@raycast/api";
-import type { ReactNode } from "react";
+  accents,
+  dashboardCard,
+  type NetworkMetricCard,
+  type QuotaMetricCard,
+  type RingMetricCard,
+  usageAccent,
+} from "./lib/cards";
 import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
-import type { ModuleKey, RateLimitWindow } from "./lib/types";
 import { useStatusSnapshot } from "./lib/use-status";
-
-function colorForPercent(percent: number, inverted = false): Color {
-  const danger = inverted ? percent <= 15 : percent >= 90;
-  const warning = inverted ? percent <= 30 : percent >= 75;
-  return danger ? Color.Red : warning ? Color.Yellow : Color.Green;
-}
 
 function shortProviderName(provider: string): string {
   return provider.replace(/^GPT-[^-]+-Codex-/i, "");
@@ -28,8 +18,12 @@ function formatBytePair(usedBytes: number, totalBytes: number): string {
   const [usedValue, usedUnit] = formatBytes(usedBytes).split(" ");
   const [totalValue, totalUnit] = formatBytes(totalBytes).split(" ");
   return usedUnit === totalUnit
-    ? `${usedValue}/${totalValue} ${usedUnit}`
-    : `${formatBytes(usedBytes)}/${formatBytes(totalBytes)}`;
+    ? `${usedValue} / ${totalValue} ${usedUnit}`
+    : `${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}`;
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promise<void> }) {
@@ -50,219 +44,141 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
   );
 }
 
-function MetricTile({
-  icon,
-  color,
-  label,
-  value,
-  detail,
-  keywords,
-  actions,
-}: {
-  icon: Icon;
-  color: Color;
-  label: string;
-  value: string;
-  detail?: string;
-  keywords?: string[];
-  actions: ReactNode;
-}) {
-  return (
-    <Grid.Item
-      content={{ source: icon, tintColor: color }}
-      title={value}
-      subtitle={detail ? `${label} · ${detail}` : label}
-      keywords={keywords}
-      actions={actions}
-    />
-  );
-}
-
-function CodexTile({
-  provider,
-  window,
-  kind,
-  actions,
-}: {
-  provider: string;
-  window: RateLimitWindow;
-  kind: string;
-  actions: ReactNode;
-}) {
-  const remaining = remainingPercent(window);
-  const windowName = formatWindowName(window.windowDurationMins).replace(/ window$/i, "");
-
-  return (
-    <MetricTile
-      icon={Icon.Stars}
-      color={colorForPercent(remaining, true)}
-      label={`${shortProviderName(provider)} · ${windowName}`}
-      value={`${remaining}% remaining`}
-      detail={formatResetTime(window.resetsAt).split(" · ")[0]}
-      keywords={["codex", "gpt", provider, kind, windowName]}
-      actions={actions}
-    />
-  );
-}
-
-const moduleTitles: Record<ModuleKey, string> = {
-  cpu: "CPU",
-  memory: "Memory",
-  disk: "Disk",
-  network: "Network",
-  battery: "Battery",
-  codex: "Codex / GPT",
-};
-
 export default function Dashboard() {
-  const { snapshot, isLoading, refresh, preferences } = useStatusSnapshot();
+  const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot();
   const actions = <RefreshActions refresh={refresh} />;
-  const columns = Math.min(8, Math.max(3, Number(preferences.gridColumns) || 5));
-  const visibleMetrics = snapshot
-    ? [snapshot.cpu, snapshot.memory, snapshot.disk, snapshot.network, snapshot.battery, snapshot.codex].filter(Boolean)
-        .length
-    : 0;
   const updatedAt = snapshot
     ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
     : null;
+
+  const systemCards: RingMetricCard[] = [];
+  if (snapshot?.cpu) {
+    systemCards.push({
+      label: "CPU",
+      percent: snapshot.cpu.percent,
+      value: `${snapshot.cpu.percent}%`,
+      detail: "CPU",
+      accent: usageAccent(snapshot.cpu.percent),
+    });
+  }
+  if (snapshot?.memory) {
+    systemCards.push({
+      label: "Memory",
+      percent: snapshot.memory.percent,
+      value: `${snapshot.memory.percent}%`,
+      detail: formatBytePair(snapshot.memory.usedBytes, snapshot.memory.totalBytes),
+      accent: usageAccent(snapshot.memory.percent),
+    });
+  }
+  if (snapshot?.disk) {
+    systemCards.push({
+      label: "Disk",
+      percent: snapshot.disk.percent,
+      value: `${snapshot.disk.percent}%`,
+      detail: `${formatBytes(snapshot.disk.availableBytes)} free`,
+      accent: usageAccent(snapshot.disk.percent),
+    });
+  }
+  if (snapshot?.battery) {
+    systemCards.push({
+      label: "Battery",
+      percent: snapshot.battery.percent,
+      value: `${snapshot.battery.percent}%`,
+      detail: capitalize(snapshot.battery.state),
+      accent: usageAccent(snapshot.battery.percent, true),
+    });
+  }
+
+  const networkCards: NetworkMetricCard[] = snapshot?.network
+    ? [
+        {
+          direction: "down",
+          value: snapshot.network.ready
+            ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
+            : "Sampling…",
+          history: networkHistory.download,
+          peak: formatRate(Math.max(...networkHistory.download, 0), preferences.networkUnits),
+          total: formatBytes(snapshot.network.totalReceivedBytes),
+          accent: accents.blue,
+        },
+        {
+          direction: "up",
+          value: snapshot.network.ready
+            ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
+            : "Sampling…",
+          history: networkHistory.upload,
+          peak: formatRate(Math.max(...networkHistory.upload, 0), preferences.networkUnits),
+          total: formatBytes(snapshot.network.totalSentBytes),
+          accent: accents.purple,
+        },
+      ]
+    : [];
+
+  const quotaCards: QuotaMetricCard[] = snapshot?.codex
+    ? snapshot.codex.limits.flatMap((limit) =>
+        [limit.primary, limit.secondary]
+          .filter((window) => window != null)
+          .map((window) => {
+            const remaining = remainingPercent(window);
+            const windowName = formatWindowName(window.windowDurationMins).replace(/ window$/i, "");
+            return {
+              label: `${shortProviderName(limit.name)} · ${windowName}`,
+              percent: remaining,
+              reset: `Resets in ${formatResetTime(window.resetsAt).split(" · ")[0]}`,
+              accent: usageAccent(remaining, true),
+            };
+          }),
+      )
+    : [];
+
+  const networkSamples = Math.max(networkHistory.download.length, networkHistory.upload.length);
+  const networkSeconds = Math.max(0, (networkSamples - 1) * Math.max(2, Number(preferences.dashboardRefreshSeconds)));
+  const networkSubtitle = snapshot?.network
+    ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s` : " · sampling"}`
+    : "";
+  const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
+  const content = dashboardCard({ system: systemCards, network: networkCards, networkSubtitle, quotas: quotaCards });
 
   return (
     <Grid
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
       searchBarPlaceholder="Filter metrics…"
-      columns={columns}
+      columns={1}
       aspectRatio="16/9"
-      fit={Grid.Fit.Contain}
-      inset={Grid.Inset.Medium}
+      fit={Grid.Fit.Fill}
+      inset={Grid.Inset.Zero}
       throttle
     >
-      {snapshot?.cpu ? (
-        <MetricTile
-          icon={Icon.Gauge}
-          color={colorForPercent(snapshot.cpu.percent)}
-          label="CPU"
-          value={`${snapshot.cpu.percent}% used`}
-          keywords={["processor", "system"]}
+      {snapshot && hasMetrics ? (
+        <Grid.Item
+          content={content}
+          keywords={[
+            "system",
+            "cpu",
+            "memory",
+            "disk",
+            "battery",
+            "network",
+            "download",
+            "upload",
+            "codex",
+            "gpt",
+            "token",
+            "quota",
+          ]}
           actions={actions}
         />
       ) : null}
 
-      {snapshot?.memory ? (
-        <MetricTile
-          icon={Icon.MemoryChip}
-          color={colorForPercent(snapshot.memory.percent)}
-          label="Memory"
-          value={`${snapshot.memory.percent}% used`}
-          detail={formatBytePair(snapshot.memory.usedBytes, snapshot.memory.totalBytes)}
-          keywords={["ram", "system"]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot?.disk ? (
-        <MetricTile
-          icon={Icon.HardDrive}
-          color={colorForPercent(snapshot.disk.percent)}
-          label="Disk"
-          value={`${snapshot.disk.percent}% used`}
-          detail={`${formatBytes(snapshot.disk.availableBytes)} free`}
-          keywords={["storage", "drive", "system"]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot?.battery ? (
-        <MetricTile
-          icon={snapshot.battery.state === "charging" ? Icon.Bolt : Icon.Battery}
-          color={colorForPercent(snapshot.battery.percent, true)}
-          label="Battery"
-          value={`${snapshot.battery.percent}%`}
-          detail={`${snapshot.battery.state}${snapshot.battery.timeRemaining ? ` · ${snapshot.battery.timeRemaining} left` : ""}`}
-          keywords={["power", "charging"]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot?.network ? (
-        <MetricTile
-          icon={Icon.ArrowDown}
-          color={Color.Blue}
-          label="Download"
-          value={
-            snapshot.network.ready
-              ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
-              : "Sampling…"
-          }
-          detail={snapshot.network.interfaceName}
-          keywords={["network", "internet", "receive"]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot?.network ? (
-        <MetricTile
-          icon={Icon.ArrowUp}
-          color={Color.Purple}
-          label="Upload"
-          value={
-            snapshot.network.ready
-              ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
-              : "Sampling…"
-          }
-          detail={snapshot.network.interfaceName}
-          keywords={["network", "internet", "send"]}
-          actions={actions}
-        />
-      ) : null}
-
-      {snapshot?.codex
-        ? snapshot.codex.limits.flatMap((limit) => [
-            ...(limit.primary
-              ? [
-                  <CodexTile
-                    key={`${limit.id}-primary`}
-                    provider={limit.name}
-                    window={limit.primary}
-                    kind="Primary"
-                    actions={actions}
-                  />,
-                ]
-              : []),
-            ...(limit.secondary
-              ? [
-                  <CodexTile
-                    key={`${limit.id}-secondary`}
-                    provider={limit.name}
-                    window={limit.secondary}
-                    kind="Secondary"
-                    actions={actions}
-                  />,
-                ]
-              : []),
-          ])
-        : null}
-
-      {snapshot
-        ? Object.entries(snapshot.errors).map(([module, message]) => (
-            <MetricTile
-              key={module}
-              icon={Icon.ExclamationMark}
-              color={Color.Red}
-              label={moduleTitles[module as ModuleKey]}
-              value="Unavailable"
-              detail={message || "Unknown error"}
-              keywords={["error", "unavailable"]}
-              actions={actions}
-            />
-          ))
-        : null}
-
-      {snapshot && visibleMetrics === 0 && Object.keys(snapshot.errors).length === 0 ? (
+      {snapshot && !hasMetrics ? (
         <Grid.EmptyView
           icon={Icon.Gauge}
-          title="No Metrics Enabled"
-          description="Choose the metrics and grid width in extension settings."
+          title="No Metrics Available"
+          description={
+            Object.values(snapshot.errors).filter(Boolean).join(" · ") ||
+            "Choose the metrics to display in extension settings."
+          }
           actions={actions}
         />
       ) : null}

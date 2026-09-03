@@ -21,7 +21,15 @@ export interface NetworkMetric {
   interfaceName: string;
   downloadBytesPerSecond: number;
   uploadBytesPerSecond: number;
+  totalReceivedBytes: number;
+  totalSentBytes: number;
   ready: boolean;
+}
+
+export interface NetworkHistory {
+  interfaceName?: string;
+  download: number[];
+  upload: number[];
 }
 
 export interface BatteryMetric {
