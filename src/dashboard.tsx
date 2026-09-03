@@ -153,8 +153,8 @@ export default function Dashboard() {
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
       searchBarPlaceholder="Filter metrics…"
-      columns={4}
-      aspectRatio="3/2"
+      columns={5}
+      aspectRatio="16/9"
       fit={Grid.Fit.Contain}
       inset={Grid.Inset.Medium}
     >
@@ -166,8 +166,8 @@ export default function Dashboard() {
         <Grid.Section
           title="System"
           subtitle={`${systemCards.length} metrics`}
-          columns={4}
-          aspectRatio="3/2"
+          columns={5}
+          aspectRatio="16/9"
           fit={Grid.Fit.Contain}
           inset={Grid.Inset.Medium}
         >
@@ -192,8 +192,8 @@ export default function Dashboard() {
         <Grid.Section
           title="Network"
           subtitle={networkSubtitle}
-          columns={4}
-          aspectRatio="3/2"
+          columns={5}
+          aspectRatio="16/9"
           fit={Grid.Fit.Contain}
           inset={Grid.Inset.Medium}
         >
@@ -224,8 +224,8 @@ export default function Dashboard() {
         <Grid.Section
           title="Token quota"
           subtitle={`${quotaCards.length} windows`}
-          columns={4}
-          aspectRatio="3/2"
+          columns={5}
+          aspectRatio="16/9"
           fit={Grid.Fit.Contain}
           inset={Grid.Inset.Medium}
         >
