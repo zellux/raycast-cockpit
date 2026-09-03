@@ -1,14 +1,18 @@
 import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
   accents,
+  networkMetricCard,
   type NetworkMetricCard,
+  quotaMetricCard,
   type QuotaMetricCard,
   type RingMetricCard,
-  systemMetricIcon,
+  systemMetricCard,
   usageAccent,
 } from "./lib/cards";
 import { formatBytes, formatRate, formatResetTime, formatWindowName, remainingPercent } from "./lib/format";
+import { useCardImage } from "./lib/use-card-image";
 import { useStatusSnapshot } from "./lib/use-status";
+import type { ReactNode } from "react";
 
 function shortProviderName(provider: string): string {
   return provider.replace(/^GPT-[^-]+-Codex-/i, "");
@@ -42,6 +46,23 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
       <Action title="Open Extension Settings" icon={Icon.Gear} onAction={openExtensionPreferences} />
     </ActionPanel>
   );
+}
+
+function MetricCardItem({
+  id,
+  svg,
+  tooltip,
+  keywords,
+  actions,
+}: {
+  id: string;
+  svg: string;
+  tooltip: string;
+  keywords: string[];
+  actions: ReactNode;
+}) {
+  const source = useCardImage(id, svg);
+  return <Grid.Item id={id} content={{ value: source, tooltip }} keywords={keywords} actions={actions} />;
 }
 
 export default function Dashboard() {
@@ -155,8 +176,8 @@ export default function Dashboard() {
       searchBarPlaceholder="Filter metrics…"
       columns={5}
       aspectRatio="16/9"
-      fit={Grid.Fit.Contain}
-      inset={Grid.Inset.Medium}
+      fit={Grid.Fit.Fill}
+      inset={Grid.Inset.Zero}
     >
       {!hasMetrics ? (
         <Grid.EmptyView title="No Metrics Available" description={emptyMessage} icon={Icon.Gauge} />
@@ -168,19 +189,15 @@ export default function Dashboard() {
           subtitle={`${systemCards.length} metrics`}
           columns={5}
           aspectRatio="16/9"
-          fit={Grid.Fit.Contain}
-          inset={Grid.Inset.Medium}
+          fit={Grid.Fit.Fill}
+          inset={Grid.Inset.Zero}
         >
           {systemCards.map((card) => (
-            <Grid.Item
+            <MetricCardItem
               key={card.label}
               id={`system-${card.label.toLowerCase()}`}
-              content={{
-                value: { source: systemMetricIcon(card.icon), tintColor: card.accent },
-                tooltip: `${card.label}: ${card.value} · ${card.detail}`,
-              }}
-              title={`${card.value} ${card.label}`}
-              subtitle={card.detail}
+              svg={systemMetricCard(card)}
+              tooltip={`${card.label}: ${card.value} · ${card.detail}`}
               keywords={[card.label, card.value, card.detail]}
               actions={actions}
             />
@@ -194,24 +211,17 @@ export default function Dashboard() {
           subtitle={networkSubtitle}
           columns={5}
           aspectRatio="16/9"
-          fit={Grid.Fit.Contain}
-          inset={Grid.Inset.Medium}
+          fit={Grid.Fit.Fill}
+          inset={Grid.Inset.Zero}
         >
           {networkCards.map((card) => {
             const label = card.direction === "down" ? "Download" : "Upload";
             return (
-              <Grid.Item
+              <MetricCardItem
                 key={card.direction}
                 id={`network-${card.direction}`}
-                content={{
-                  value: {
-                    source: card.direction === "down" ? Icon.ArrowDown : Icon.ArrowUp,
-                    tintColor: card.accent,
-                  },
-                  tooltip: `${label}: ${card.value} · Peak ${card.peak} · Total ${card.total}`,
-                }}
-                title={`${card.value} ${label}`}
-                subtitle={`Peak ${card.peak}`}
+                svg={networkMetricCard(card)}
+                tooltip={`${label}: ${card.value} · Peak ${card.peak} · Total ${card.total}`}
                 keywords={[label, card.value, card.peak, card.total]}
                 actions={actions}
               />
@@ -226,19 +236,15 @@ export default function Dashboard() {
           subtitle={`${quotaCards.length} windows`}
           columns={5}
           aspectRatio="16/9"
-          fit={Grid.Fit.Contain}
-          inset={Grid.Inset.Medium}
+          fit={Grid.Fit.Fill}
+          inset={Grid.Inset.Zero}
         >
           {quotaCards.map((card) => (
-            <Grid.Item
+            <MetricCardItem
               key={card.id}
               id={`quota-${card.id}`}
-              content={{
-                value: { source: Icon.Gauge, tintColor: card.accent },
-                tooltip: `${card.label}: ${card.percent}% · ${card.reset}`,
-              }}
-              title={`${card.percent}% ${card.label}`}
-              subtitle={card.reset}
+              svg={quotaMetricCard(card)}
+              tooltip={`${card.label}: ${card.percent}% · ${card.reset}`}
               keywords={[card.label, `${card.percent}%`, card.reset]}
               actions={actions}
             />
