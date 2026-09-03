@@ -1,10 +1,7 @@
-import { Action, ActionPanel, Grid, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Detail, Icon, Keyboard, openExtensionPreferences, showToast, Toast } from "@raycast/api";
 import {
   accents,
-  networkRateTile,
-  networkStatsTile,
-  quotaTile,
-  systemTile,
+  dashboardCard,
   type NetworkMetricCard,
   type QuotaMetricCard,
   type RingMetricCard,
@@ -48,7 +45,9 @@ function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promis
 }
 
 export default function Dashboard() {
-  const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot();
+  const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot({
+    minimumPublishIntervalSeconds: 30,
+  });
   const actions = <RefreshActions refresh={refresh} />;
   const updatedAt = snapshot
     ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
@@ -140,76 +139,20 @@ export default function Dashboard() {
     ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s` : " · sampling"}`
     : "";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
+  const content = dashboardCard({ system: systemCards, network: networkCards, networkSubtitle, quotas: quotaCards });
+  const emptyMessage =
+    Object.values(snapshot?.errors ?? {})
+      .filter(Boolean)
+      .join(" · ") || "Choose the metrics to display in extension settings.";
+
   return (
-    <Grid
+    <Detail
       isLoading={isLoading}
       navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
-      searchBarPlaceholder="Filter metrics…"
-      columns={4}
-      aspectRatio="16/9"
-      fit={Grid.Fit.Fill}
-      inset={Grid.Inset.Zero}
-      throttle
-    >
-      {systemCards.length > 0 ? (
-        <Grid.Section columns={4} aspectRatio="16/9" inset={Grid.Inset.Zero}>
-          {systemCards.map((card, index) => (
-            <Grid.Item
-              key={card.label}
-              content={systemTile(card, index === 0 ? `System · ${systemCards.length} metrics` : undefined)}
-              keywords={["system", card.label, card.value, card.detail]}
-              actions={actions}
-            />
-          ))}
-        </Grid.Section>
-      ) : null}
-
-      {networkCards.length > 0 ? (
-        <Grid.Section columns={4} aspectRatio="16/9" inset={Grid.Inset.Zero}>
-          {networkCards.flatMap((card, index) => {
-            const direction = card.direction === "down" ? "download" : "upload";
-            return [
-              <Grid.Item
-                key={`${direction}-rate`}
-                content={networkRateTile(card, index === 0 ? `Network · ${networkSubtitle}` : undefined)}
-                keywords={["network", direction, "rate", card.value]}
-                actions={actions}
-              />,
-              <Grid.Item
-                key={`${direction}-stats`}
-                content={networkStatsTile(card)}
-                keywords={["network", direction, "peak", "total", card.peak, card.total]}
-                actions={actions}
-              />,
-            ];
-          })}
-        </Grid.Section>
-      ) : null}
-
-      {quotaCards.length > 0 ? (
-        <Grid.Section columns={4} aspectRatio="16/9" inset={Grid.Inset.Zero}>
-          {quotaCards.map((card, index) => (
-            <Grid.Item
-              key={card.label}
-              content={quotaTile(card, index === 0 ? `Token quota · ${quotaCards.length} windows` : undefined)}
-              keywords={["codex", "gpt", "token", "quota", card.label, `${card.percent}%`, card.reset]}
-              actions={actions}
-            />
-          ))}
-        </Grid.Section>
-      ) : null}
-
-      {snapshot && !hasMetrics ? (
-        <Grid.EmptyView
-          icon={Icon.Gauge}
-          title="No Metrics Available"
-          description={
-            Object.values(snapshot.errors).filter(Boolean).join(" · ") ||
-            "Choose the metrics to display in extension settings."
-          }
-          actions={actions}
-        />
-      ) : null}
-    </Grid>
+      markdown={
+        snapshot && hasMetrics ? `![Status Dashboard](${content})` : `# No Metrics Available\n\n${emptyMessage}`
+      }
+      actions={actions}
+    />
   );
 }

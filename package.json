@@ -85,8 +85,8 @@
       "name": "dashboardRefreshSeconds",
       "type": "dropdown",
       "required": false,
-      "title": "Dashboard Refresh",
-      "description": "How often the open dashboard refreshes. Codex usage is cached for one minute.",
+      "title": "Dashboard Sampling",
+      "description": "How often metrics are sampled. The dashboard redraws at most every 30 seconds to avoid flicker; manual refresh redraws immediately.",
       "default": "5",
       "data": [
         {

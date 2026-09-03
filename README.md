@@ -17,7 +17,7 @@ Every module can be enabled or disabled independently in Raycast's extension set
 
 ### Open Status Dashboard
 
-A single-screen Raycast dashboard with grouped system rings, live network sparklines, and Codex quota progress bars. The dashboard refresh interval is configurable.
+A single-screen Raycast dashboard with grouped system rings, live network sparklines, and Codex quota progress bars. Metrics are sampled at the configured interval; the composed dashboard redraws at most every 30 seconds to avoid image flicker. Manual refresh redraws immediately.
 
 ### Status Dashboard Menu Bar
 
@@ -44,7 +44,7 @@ Raycast will register the local development extension. Assign a hotkey to **Open
 Open Raycast Settings → Extensions → Status Dashboard. Available settings include:
 
 - Per-module visibility toggles
-- Dashboard refresh interval
+- Dashboard sampling interval
 - Network byte/bit units
 - Primary menu bar value
 - Codex CLI executable path

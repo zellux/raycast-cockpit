@@ -8,7 +8,7 @@ interface StatusState {
   networkHistory: NetworkHistory;
 }
 
-export function useStatusSnapshot() {
+export function useStatusSnapshot({ minimumPublishIntervalSeconds = 0 } = {}) {
   const preferences = getPreferenceValues<Preferences>();
   const modulePreferences = useMemo<ModulePreferences>(
     () => ({
@@ -26,6 +26,8 @@ export function useStatusSnapshot() {
   const [state, setState] = useState<StatusState>({ networkHistory: { download: [], upload: [] } });
   const [isLoading, setIsLoading] = useState(true);
   const running = useRef(false);
+  const networkHistoryRef = useRef<NetworkHistory>({ download: [], upload: [] });
+  const lastPublishedAt = useRef(0);
 
   const refresh = useCallback(
     async (forceCodex = false) => {
@@ -33,27 +35,36 @@ export function useStatusSnapshot() {
       running.current = true;
       try {
         const nextSnapshot = await collectSnapshot(modulePreferences, forceCodex);
-        setState((previous) => {
-          if (!nextSnapshot.network?.ready) return { ...previous, snapshot: nextSnapshot };
+        if (nextSnapshot.network?.ready) {
           const history =
-            previous.networkHistory.interfaceName === nextSnapshot.network.interfaceName
-              ? previous.networkHistory
+            networkHistoryRef.current.interfaceName === nextSnapshot.network.interfaceName
+              ? networkHistoryRef.current
               : { download: [], upload: [] };
-          return {
-            snapshot: nextSnapshot,
-            networkHistory: {
-              interfaceName: nextSnapshot.network.interfaceName,
-              download: [...history.download, nextSnapshot.network.downloadBytesPerSecond].slice(-18),
-              upload: [...history.upload, nextSnapshot.network.uploadBytesPerSecond].slice(-18),
-            },
+          networkHistoryRef.current = {
+            interfaceName: nextSnapshot.network.interfaceName,
+            download: [...history.download, nextSnapshot.network.downloadBytesPerSecond].slice(-18),
+            upload: [...history.upload, nextSnapshot.network.uploadBytesPerSecond].slice(-18),
           };
-        });
+        }
+
+        const publishIntervalSeconds = Math.max(
+          minimumPublishIntervalSeconds,
+          Number(preferences.dashboardRefreshSeconds),
+        );
+        const shouldPublish =
+          forceCodex ||
+          lastPublishedAt.current === 0 ||
+          Date.now() - lastPublishedAt.current >= publishIntervalSeconds * 1000;
+        if (shouldPublish) {
+          lastPublishedAt.current = Date.now();
+          setState({ snapshot: nextSnapshot, networkHistory: networkHistoryRef.current });
+        }
       } finally {
         running.current = false;
         setIsLoading(false);
       }
     },
-    [modulePreferences],
+    [minimumPublishIntervalSeconds, modulePreferences, preferences.dashboardRefreshSeconds],
   );
 
   useEffect(() => {
