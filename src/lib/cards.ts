@@ -21,6 +21,7 @@ export const accents = {
   red: "#FF5A52",
   blue: "#3787FF",
   purple: "#7657E8",
+  neutral: "#8E8E93",
 };
 
 export type SystemMetricIcon = "cpu" | "memory" | "disk" | "battery" | "uptime";
@@ -45,7 +46,7 @@ export interface NetworkMetricCard {
 export interface QuotaMetricCard {
   id: string;
   label: string;
-  percent: number;
+  percent: number | null;
   reset: string;
   accent: string;
 }
@@ -130,17 +131,21 @@ export function networkMetricCard(card: NetworkMetricCard): string {
 }
 
 export function quotaMetricCard(card: QuotaMetricCard): string {
-  const normalized = Math.max(0, Math.min(100, card.percent));
-  const progressWidth = (normalized / 100) * 264;
+  const normalized = card.percent == null ? null : Math.max(0, Math.min(100, card.percent));
+  const progressWidth = normalized == null ? 0 : (normalized / 100) * 264;
+  const progress =
+    normalized == null
+      ? ""
+      : `<rect x="28" y="83" width="${progressWidth}" height="9" rx="4.5" fill="${card.accent}"/>`;
 
   return svgFrame(`
     <text x="28" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="22" font-weight="600">${escapeXml(card.label)}</text>
     <text x="292" y="47" text-anchor="end" fill="${palette.primary}"
       font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700"
-      font-variant-numeric="tabular-nums" font-feature-settings="'tnum' 1, 'kern' 1" letter-spacing="-.4">${normalized}%</text>
+      font-variant-numeric="tabular-nums" font-feature-settings="'tnum' 1, 'kern' 1" letter-spacing="-.4">${normalized == null ? "—" : `${normalized}%`}</text>
     <rect x="28" y="83" width="264" height="9" rx="4.5" fill="${palette.track}"/>
-    <rect x="28" y="83" width="${progressWidth}" height="9" rx="4.5" fill="${card.accent}"/>
+    ${progress}
     <text x="28" y="147" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="22" font-weight="500">${escapeXml(card.reset)}</text>
   `);

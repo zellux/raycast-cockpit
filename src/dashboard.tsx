@@ -19,6 +19,7 @@ import {
 } from "./lib/format";
 import { useCardImage } from "./lib/use-card-image";
 import { useStatusSnapshot } from "./lib/use-status";
+import type { ModuleKey, StatusSnapshot } from "./lib/types";
 import type { ReactNode } from "react";
 
 function shortProviderName(provider: string): string {
@@ -41,6 +42,10 @@ function average(values: number[], sampleCount: number): number {
   const samples = values.slice(-sampleCount);
   if (samples.length === 0) return 0;
   return samples.reduce((sum, value) => sum + value, 0) / samples.length;
+}
+
+function pendingDetail(snapshot: StatusSnapshot | undefined, key: ModuleKey): string {
+  return snapshot?.errors[key] ? "Unavailable" : "Loading…";
 }
 
 function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promise<void> }) {
@@ -88,75 +93,88 @@ export default function Dashboard() {
     : null;
 
   const systemCards: RingMetricCard[] = [];
-  if (snapshot?.cpu) {
+  if (preferences.showCpu) {
+    const cpu = snapshot?.cpu;
     systemCards.push({
       icon: "cpu",
       label: "CPU",
-      percent: snapshot.cpu.percent,
-      value: `${snapshot.cpu.percent}%`,
-      detail: "Current usage",
-      accent: usageAccent(snapshot.cpu.percent),
+      percent: cpu?.percent ?? 0,
+      value: cpu ? `${cpu.percent}%` : "—",
+      detail: cpu ? "Current usage" : pendingDetail(snapshot, "cpu"),
+      accent: cpu ? usageAccent(cpu.percent) : accents.neutral,
     });
   }
-  if (snapshot?.memory) {
+  if (preferences.showMemory) {
+    const memory = snapshot?.memory;
     systemCards.push({
       icon: "memory",
       label: "Memory",
-      percent: snapshot.memory.percent,
-      value: `${snapshot.memory.percent}%`,
-      detail: formatBytePair(snapshot.memory.usedBytes, snapshot.memory.totalBytes),
-      accent: usageAccent(snapshot.memory.percent),
+      percent: memory?.percent ?? 0,
+      value: memory ? `${memory.percent}%` : "—",
+      detail: memory ? formatBytePair(memory.usedBytes, memory.totalBytes) : pendingDetail(snapshot, "memory"),
+      accent: memory ? usageAccent(memory.percent) : accents.neutral,
     });
   }
-  if (snapshot?.disk) {
+  if (preferences.showDisk) {
+    const disk = snapshot?.disk;
     systemCards.push({
       icon: "disk",
       label: "Disk",
-      percent: snapshot.disk.percent,
-      value: `${snapshot.disk.percent}%`,
-      detail: `${formatBytes(snapshot.disk.availableBytes)} free`,
-      accent: usageAccent(snapshot.disk.percent),
+      percent: disk?.percent ?? 0,
+      value: disk ? `${disk.percent}%` : "—",
+      detail: disk ? `${formatBytes(disk.availableBytes)} free` : pendingDetail(snapshot, "disk"),
+      accent: disk ? usageAccent(disk.percent) : accents.neutral,
     });
   }
-  if (snapshot?.uptime) {
+  if (preferences.showUptime) {
+    const uptime = snapshot?.uptime;
     systemCards.push({
       icon: "uptime",
       label: "Uptime",
       percent: 0,
-      value: formatDuration(snapshot.uptime.seconds),
-      detail: "Since restart",
-      accent: accents.blue,
+      value: uptime ? formatDuration(uptime.seconds) : "—",
+      detail: uptime ? "Since restart" : pendingDetail(snapshot, "uptime"),
+      accent: uptime ? accents.blue : accents.neutral,
     });
   }
-  if (snapshot?.battery) {
+  if (preferences.showBattery) {
+    const battery = snapshot?.battery;
     systemCards.push({
       icon: "battery",
       label: "Battery",
-      percent: snapshot.battery.percent,
-      value: `${snapshot.battery.percent}%`,
-      detail: capitalize(snapshot.battery.state),
-      accent: usageAccent(snapshot.battery.percent, true),
+      percent: battery?.percent ?? 0,
+      value: battery ? `${battery.percent}%` : "—",
+      detail: battery ? capitalize(battery.state) : pendingDetail(snapshot, "battery"),
+      accent: battery ? usageAccent(battery.percent, true) : accents.neutral,
     });
   }
 
-  const networkCards: NetworkMetricCard[] = snapshot?.network
+  const networkCards: NetworkMetricCard[] = preferences.showNetwork
     ? [
         {
           direction: "down",
-          value: snapshot.network.ready
-            ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
-            : "Sampling…",
-          average: formatRate(average(networkHistory.download, networkAverageSamples), preferences.networkUnits),
-          total: formatBytes(snapshot.network.totalReceivedBytes),
+          value: snapshot?.network
+            ? snapshot.network.ready
+              ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
+              : "Sampling…"
+            : "—",
+          average: snapshot?.network
+            ? formatRate(average(networkHistory.download, networkAverageSamples), preferences.networkUnits)
+            : "—",
+          total: snapshot?.network ? formatBytes(snapshot.network.totalReceivedBytes) : "—",
           accent: accents.blue,
         },
         {
           direction: "up",
-          value: snapshot.network.ready
-            ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
-            : "Sampling…",
-          average: formatRate(average(networkHistory.upload, networkAverageSamples), preferences.networkUnits),
-          total: formatBytes(snapshot.network.totalSentBytes),
+          value: snapshot?.network
+            ? snapshot.network.ready
+              ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
+              : "Sampling…"
+            : "—",
+          average: snapshot?.network
+            ? formatRate(average(networkHistory.upload, networkAverageSamples), preferences.networkUnits)
+            : "—",
+          total: snapshot?.network ? formatBytes(snapshot.network.totalSentBytes) : "—",
           accent: accents.purple,
         },
       ]
@@ -181,9 +199,24 @@ export default function Dashboard() {
             };
           }),
       )
-    : [];
+    : preferences.showCodex
+      ? [
+          {
+            id: "pending",
+            label: "Codex usage",
+            percent: null,
+            reset: pendingDetail(snapshot, "codex"),
+            accent: accents.neutral,
+          },
+        ]
+      : [];
 
-  const networkSubtitle = snapshot?.network ? `${snapshot.network.interfaceName} · 30s` : "";
+  const networkSubtitle = snapshot?.network ? `${snapshot.network.interfaceName} · 30s` : "30s";
+  const quotaSubtitle = snapshot?.codex
+    ? `${quotaCards.length} windows`
+    : snapshot?.errors.codex
+      ? "Unavailable"
+      : "Loading…";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
   const emptyMessage =
     Object.values(snapshot?.errors ?? {})
@@ -254,7 +287,7 @@ export default function Dashboard() {
       {quotaCards.length > 0 ? (
         <Grid.Section
           title="Token quota"
-          subtitle={`${quotaCards.length} windows`}
+          subtitle={quotaSubtitle}
           columns={5}
           aspectRatio="16/9"
           fit={Grid.Fit.Fill}
@@ -265,8 +298,12 @@ export default function Dashboard() {
               key={card.id}
               id={`quota-${card.id}`}
               svg={quotaMetricCard(card)}
-              tooltip={`${card.label}: ${card.percent}% · ${card.reset}`}
-              keywords={[card.label, `${card.percent}%`, card.reset]}
+              tooltip={
+                card.percent == null
+                  ? `${card.label}: ${card.reset}`
+                  : `${card.label}: ${card.percent}% · ${card.reset}`
+              }
+              keywords={[card.label, card.percent == null ? "loading" : `${card.percent}%`, card.reset]}
               actions={actions}
             />
           ))}
