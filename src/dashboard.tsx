@@ -37,6 +37,12 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function average(values: number[], sampleCount: number): number {
+  const samples = values.slice(-sampleCount);
+  if (samples.length === 0) return 0;
+  return samples.reduce((sum, value) => sum + value, 0) / samples.length;
+}
+
 function RefreshActions({ refresh }: { refresh: (forceCodex?: boolean) => Promise<void> }) {
   return (
     <ActionPanel>
@@ -75,6 +81,8 @@ function MetricCardItem({
 export default function Dashboard() {
   const { snapshot, networkHistory, isLoading, refresh, preferences } = useStatusSnapshot();
   const actions = <RefreshActions refresh={refresh} />;
+  const refreshSeconds = Math.max(2, Number(preferences.dashboardRefreshSeconds));
+  const networkAverageSamples = Math.max(1, Math.ceil(30 / refreshSeconds));
   const updatedAt = snapshot
     ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
     : null;
@@ -138,7 +146,7 @@ export default function Dashboard() {
           value: snapshot.network.ready
             ? formatRate(snapshot.network.downloadBytesPerSecond, preferences.networkUnits)
             : "Sampling…",
-          peak: formatRate(Math.max(...networkHistory.download, 0), preferences.networkUnits),
+          average: formatRate(average(networkHistory.download, networkAverageSamples), preferences.networkUnits),
           total: formatBytes(snapshot.network.totalReceivedBytes),
           accent: accents.blue,
         },
@@ -147,7 +155,7 @@ export default function Dashboard() {
           value: snapshot.network.ready
             ? formatRate(snapshot.network.uploadBytesPerSecond, preferences.networkUnits)
             : "Sampling…",
-          peak: formatRate(Math.max(...networkHistory.upload, 0), preferences.networkUnits),
+          average: formatRate(average(networkHistory.upload, networkAverageSamples), preferences.networkUnits),
           total: formatBytes(snapshot.network.totalSentBytes),
           accent: accents.purple,
         },
@@ -175,11 +183,7 @@ export default function Dashboard() {
       )
     : [];
 
-  const networkSamples = Math.max(networkHistory.download.length, networkHistory.upload.length);
-  const networkSeconds = Math.max(0, (networkSamples - 1) * Math.max(2, Number(preferences.dashboardRefreshSeconds)));
-  const networkSubtitle = snapshot?.network
-    ? `${snapshot.network.interfaceName}${networkSeconds > 0 ? ` · ${networkSeconds}s peak` : " · sampling"}`
-    : "";
+  const networkSubtitle = snapshot?.network ? `${snapshot.network.interfaceName} · 30s` : "";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
   const emptyMessage =
     Object.values(snapshot?.errors ?? {})
@@ -238,8 +242,8 @@ export default function Dashboard() {
                 key={card.direction}
                 id={`network-${card.direction}`}
                 svg={networkMetricCard(card)}
-                tooltip={`${label}: ${card.value} · Peak ${card.peak} · Total ${card.total}`}
-                keywords={[label, card.value, card.peak, card.total]}
+                tooltip={`${label}: ${card.value} · 30s average ${card.average} · Total ${card.total}`}
+                keywords={[label, card.value, card.average, card.total]}
                 actions={actions}
               />
             );

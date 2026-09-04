@@ -37,7 +37,7 @@ export interface RingMetricCard {
 export interface NetworkMetricCard {
   direction: "down" | "up";
   value: string;
-  peak: string;
+  average: string;
   total: string;
   accent: string;
 }
@@ -119,7 +119,7 @@ export function networkMetricCard(card: NetworkMetricCard): string {
     <text x="20" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="40" font-weight="700">${escapeXml(card.value)}</text>
     <text x="20" y="146" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="21" font-weight="500">Peak ${escapeXml(card.peak)}</text>
+      font-size="21" font-weight="500">Avg ${escapeXml(card.average)}</text>
   `);
 }
 
