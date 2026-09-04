@@ -97,12 +97,13 @@ function systemIcon(icon: SystemMetricIcon, accent: string): string {
 
 export function systemMetricCard(card: RingMetricCard): string {
   return svgFrame(`
-    <g transform="translate(20 18) scale(.7)">${systemIcon(card.icon, card.accent)}</g>
-    <text x="62" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="23" font-weight="650">${escapeXml(card.label)}</text>
-    <text x="20" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="46" font-weight="700">${escapeXml(card.value)}</text>
-    <text x="20" y="146" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    <g transform="translate(28 24) scale(.6)">${systemIcon(card.icon, card.accent)}</g>
+    <text x="64" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="23" font-weight="600">${escapeXml(card.label)}</text>
+    <text x="28" y="112" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="46" font-weight="700" font-variant-numeric="tabular-nums" font-feature-settings="'tnum' 1, 'kern' 1"
+      letter-spacing="-.6">${escapeXml(card.value)}</text>
+    <text x="28" y="147" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="21" font-weight="500">${escapeXml(card.detail)}</text>
   `);
 }
@@ -110,31 +111,37 @@ export function systemMetricCard(card: RingMetricCard): string {
 export function networkMetricCard(card: NetworkMetricCard): string {
   const label = card.direction === "down" ? "Download" : "Upload";
   const arrow = card.direction === "down" ? '<path d="M16 2v31M7 24l9 9 9-9"/>' : '<path d="M16 33V2M7 11l9-9 9 9"/>';
+  const valueParts = card.value.match(/^([\d.,]+)\s+(.+\/s)$/);
+  const value = valueParts
+    ? `${escapeXml(valueParts[1])}<tspan dx="7" fill="${palette.secondary}" font-size="24" font-weight="600" letter-spacing="0">${escapeXml(valueParts[2])}</tspan>`
+    : escapeXml(card.value);
 
   return svgFrame(`
-    <g transform="translate(20 17)" fill="none" stroke="${card.accent}" stroke-width="5"
+    <g transform="translate(30 24) scale(.82)" fill="none" stroke="${card.accent}" stroke-width="5"
       stroke-linecap="round" stroke-linejoin="round">${arrow}</g>
-    <text x="61" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="23" font-weight="650">${label}</text>
-    <text x="20" y="111" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="40" font-weight="700">${escapeXml(card.value)}</text>
-    <text x="20" y="146" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    <text x="64" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="23" font-weight="600">${label}</text>
+    <text x="28" y="112" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="42" font-weight="700" font-variant-numeric="tabular-nums" font-feature-settings="'tnum' 1, 'kern' 1"
+      letter-spacing="-.6">${value}</text>
+    <text x="28" y="147" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="21" font-weight="500">Avg ${escapeXml(card.average)}</text>
   `);
 }
 
 export function quotaMetricCard(card: QuotaMetricCard): string {
   const normalized = Math.max(0, Math.min(100, card.percent));
-  const progressWidth = (normalized / 100) * 280;
+  const progressWidth = (normalized / 100) * 264;
 
   return svgFrame(`
-    <text x="20" y="52" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
-      font-size="22" font-weight="650">${escapeXml(card.label)}</text>
-    <text x="300" y="52" text-anchor="end" fill="${palette.primary}"
-      font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="25" font-weight="700">${normalized}%</text>
-    <rect x="20" y="78" width="280" height="9" rx="4.5" fill="${palette.track}"/>
-    <rect x="20" y="78" width="${progressWidth}" height="9" rx="4.5" fill="${card.accent}"/>
-    <text x="20" y="128" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    <text x="28" y="47" fill="${palette.primary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+      font-size="22" font-weight="600">${escapeXml(card.label)}</text>
+    <text x="292" y="47" text-anchor="end" fill="${palette.primary}"
+      font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700"
+      font-variant-numeric="tabular-nums" font-feature-settings="'tnum' 1, 'kern' 1" letter-spacing="-.4">${normalized}%</text>
+    <rect x="28" y="83" width="264" height="9" rx="4.5" fill="${palette.track}"/>
+    <rect x="28" y="83" width="${progressWidth}" height="9" rx="4.5" fill="${card.accent}"/>
+    <text x="28" y="147" fill="${palette.secondary}" font-family="-apple-system, BlinkMacSystemFont, sans-serif"
       font-size="22" font-weight="500">${escapeXml(card.reset)}</text>
   `);
 }
