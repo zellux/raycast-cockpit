@@ -16,14 +16,6 @@
       "subtitle": "Mac and Codex status at a glance",
       "description": "View the enabled system, network, battery, and Codex metrics.",
       "mode": "view"
-    },
-    {
-      "name": "menu-bar",
-      "title": "Status Dashboard Menu Bar",
-      "subtitle": "Compact status in the menu bar",
-      "description": "Show enabled metrics in a compact menu bar item.",
-      "mode": "menu-bar",
-      "interval": "1m"
     }
   ],
   "preferences": [
@@ -32,7 +24,7 @@
       "type": "checkbox",
       "required": false,
       "title": "CPU",
-      "description": "Include current CPU utilization in the dashboard and menu bar.",
+      "description": "Include current CPU utilization in the dashboard.",
       "label": "Show CPU usage",
       "default": true
     },
@@ -131,36 +123,6 @@
         {
           "title": "Bits per second",
           "value": "bits"
-        }
-      ]
-    },
-    {
-      "name": "menuBarPrimary",
-      "type": "dropdown",
-      "required": false,
-      "title": "Menu Bar Summary",
-      "description": "Choose the primary value displayed beside the menu bar icon.",
-      "default": "network",
-      "data": [
-        {
-          "title": "Network speed",
-          "value": "network"
-        },
-        {
-          "title": "CPU usage",
-          "value": "cpu"
-        },
-        {
-          "title": "Memory usage",
-          "value": "memory"
-        },
-        {
-          "title": "Codex remaining",
-          "value": "codex"
-        },
-        {
-          "title": "Icon only",
-          "value": "icon"
         }
       ]
     },

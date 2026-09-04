@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
-  /** CPU - Include current CPU utilization in the dashboard and menu bar. */
+  /** CPU - Include current CPU utilization in the dashboard. */
   "showCpu": boolean,
   /** Memory - Include current memory pressure and utilization. */
   "showMemory": boolean,
@@ -26,8 +26,6 @@ type ExtensionPreferences = {
   "dashboardRefreshSeconds": "2" | "5" | "10" | "30",
   /** Network Units - Display network throughput as bytes or bits per second. */
   "networkUnits": "bytes" | "bits",
-  /** Menu Bar Summary - Choose the primary value displayed beside the menu bar icon. */
-  "menuBarPrimary": "network" | "cpu" | "memory" | "codex" | "icon",
   /** Codex CLI Path - Absolute path to the Codex CLI executable. */
   "codexPath": string
 }
@@ -38,14 +36,10 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `dashboard` command */
   export type Dashboard = ExtensionPreferences & {}
-  /** Preferences accessible in the `menu-bar` command */
-  export type MenuBar = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
   /** Arguments passed to the `dashboard` command */
   export type Dashboard = {}
-  /** Arguments passed to the `menu-bar` command */
-  export type MenuBar = {}
 }
 
