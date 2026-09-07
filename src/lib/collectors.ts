@@ -1,9 +1,12 @@
 import { LocalStorage } from "@raycast/api";
 import { execFile, spawn } from "node:child_process";
-import { uptime } from "node:os";
+import { readFile } from "node:fs/promises";
+import { homedir, uptime } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import type {
   BatteryMetric,
+  ClaudeMetric,
   CodexLimit,
   CodexMetric,
   CpuMetric,
@@ -52,6 +55,18 @@ interface RawRateLimit {
 interface RawRateLimitResponse {
   rateLimits?: RawRateLimit;
   rateLimitsByLimitId?: Record<string, RawRateLimit> | null;
+}
+
+interface RawClaudeUsageSample {
+  t?: number;
+  u?: {
+    fh?: number;
+    sd?: number;
+  };
+}
+
+interface RawClaudeUsageHistory {
+  samples?: RawClaudeUsageSample[];
 }
 
 async function run(file: string, args: string[], timeout = 5_000): Promise<string> {
@@ -324,6 +339,32 @@ export async function collectCodex(codexPath: string, force = false): Promise<Co
   return metric;
 }
 
+function expandHomePath(filePath: string): string {
+  if (filePath === "~") return homedir();
+  if (filePath.startsWith("~/")) return join(homedir(), filePath.slice(2));
+  return filePath;
+}
+
+export async function collectClaude(usagePath: string): Promise<ClaudeMetric> {
+  const raw = JSON.parse(await readFile(expandHomePath(usagePath), "utf8")) as RawClaudeUsageHistory;
+  const sample = raw.samples
+    ?.filter((candidate) => Number.isFinite(candidate.t) && candidate.u)
+    .sort((a, b) => (b.t ?? 0) - (a.t ?? 0))[0];
+
+  if (!sample?.u || !sample.t) throw new Error("No Claude usage samples found");
+
+  const windows: ClaudeMetric["windows"] = [];
+  if (Number.isFinite(sample.u.fh)) {
+    windows.push({ id: "five-hour", name: "5-hour", usedPercent: clampPercent(sample.u.fh!) });
+  }
+  if (Number.isFinite(sample.u.sd)) {
+    windows.push({ id: "weekly", name: "Weekly", usedPercent: clampPercent(sample.u.sd!) });
+  }
+  if (windows.length === 0) throw new Error("Claude usage sample has no rate-limit windows");
+
+  return { updatedAt: sample.t, windows };
+}
+
 async function capture<T>(
   key: ModuleKey,
   enabled: boolean,
@@ -353,6 +394,13 @@ export async function collectSnapshot(preferences: ModulePreferences, forceCodex
       preferences.showCodex,
       () => collectCodex(preferences.codexPath, forceCodex),
       (value) => (snapshot.codex = value),
+      snapshot.errors,
+    ),
+    capture(
+      "claude",
+      preferences.showClaude,
+      () => collectClaude(preferences.claudeUsagePath),
+      (value) => (snapshot.claude = value),
       snapshot.errors,
     ),
   ]);

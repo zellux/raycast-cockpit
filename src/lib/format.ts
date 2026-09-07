@@ -69,6 +69,16 @@ export function formatResetTime(timestamp: number | null): string {
   return `${relative} · ${absolute}`;
 }
 
+export function formatAge(timestamp: number): string {
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (elapsedMinutes < 1) return "Updated just now";
+  if (elapsedMinutes < 60) return `Updated ${elapsedMinutes}m ago`;
+  const hours = Math.floor(elapsedMinutes / 60);
+  if (hours < 24) return `Updated ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `Updated ${days}d ago`;
+}
+
 export function progressGlyph(percent: number): string {
   const filled = Math.round(clampPercent(percent) / 10);
   return `${"●".repeat(filled)}${"○".repeat(10 - filled)}`;

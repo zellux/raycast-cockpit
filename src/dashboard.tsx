@@ -10,7 +10,9 @@ import {
   usageAccent,
 } from "./lib/cards";
 import {
+  clampPercent,
   formatBytes,
+  formatAge,
   formatDuration,
   formatRate,
   formatResetTime,
@@ -24,6 +26,10 @@ import type { ReactNode } from "react";
 
 function shortProviderName(provider: string): string {
   return provider.replace(/^GPT-[^-]+-Codex-/i, "");
+}
+
+function isSparkLimit(id: string, name: string): boolean {
+  return /spark/i.test(`${id} ${name}`);
 }
 
 function formatBytePair(usedBytes: number, totalBytes: number): string {
@@ -180,25 +186,27 @@ export default function Dashboard() {
       ]
     : [];
 
-  const quotaCards: QuotaMetricCard[] = snapshot?.codex
-    ? snapshot.codex.limits.flatMap((limit) =>
-        [
-          { kind: "primary", window: limit.primary },
-          { kind: "secondary", window: limit.secondary },
-        ]
-          .filter((entry) => entry.window != null)
-          .map(({ kind, window }) => {
-            const remaining = remainingPercent(window!);
-            const windowName = formatWindowName(window!.windowDurationMins).replace(/ window$/i, "");
-            return {
-              id: `${limit.id}-${kind}`,
-              label: `${shortProviderName(limit.name)} · ${windowName}`,
-              percent: remaining,
-              reset: `Resets in ${formatResetTime(window!.resetsAt).split(" · ")[0]}`,
-              accent: usageAccent(remaining, true),
-            };
-          }),
-      )
+  const codexQuotaCards: QuotaMetricCard[] = snapshot?.codex
+    ? snapshot.codex.limits
+        .filter((limit) => preferences.showSpark || !isSparkLimit(limit.id, limit.name))
+        .flatMap((limit) =>
+          [
+            { kind: "primary", window: limit.primary },
+            { kind: "secondary", window: limit.secondary },
+          ]
+            .filter((entry) => entry.window != null)
+            .map(({ kind, window }) => {
+              const remaining = remainingPercent(window!);
+              const windowName = formatWindowName(window!.windowDurationMins).replace(/ window$/i, "");
+              return {
+                id: `${limit.id}-${kind}`,
+                label: `${shortProviderName(limit.name)} · ${windowName}`,
+                percent: remaining,
+                reset: `Resets in ${formatResetTime(window!.resetsAt).split(" · ")[0]}`,
+                accent: usageAccent(remaining, true),
+              };
+            }),
+        )
     : preferences.showCodex
       ? [
           {
@@ -211,12 +219,34 @@ export default function Dashboard() {
         ]
       : [];
 
+  const claudeQuotaCards: QuotaMetricCard[] = snapshot?.claude
+    ? snapshot.claude.windows.map((window) => {
+        const remaining = clampPercent(100 - window.usedPercent);
+        return {
+          id: `claude-${window.id}`,
+          label: `Claude · ${window.name}`,
+          percent: remaining,
+          reset: formatAge(snapshot.claude!.updatedAt),
+          accent: usageAccent(remaining, true),
+        };
+      })
+    : preferences.showClaude
+      ? [
+          {
+            id: "claude-pending",
+            label: "Claude usage",
+            percent: null,
+            reset: pendingDetail(snapshot, "claude"),
+            accent: accents.neutral,
+          },
+        ]
+      : [];
+
+  const quotaCards = [...codexQuotaCards, ...claudeQuotaCards];
+
   const networkSubtitle = snapshot?.network ? `${snapshot.network.interfaceName} · 30s` : "30s";
-  const quotaSubtitle = snapshot?.codex
-    ? `${quotaCards.length} windows`
-    : snapshot?.errors.codex
-      ? "Unavailable"
-      : "Loading…";
+  const loadedQuotaCount = quotaCards.filter((card) => card.percent != null).length;
+  const quotaSubtitle = loadedQuotaCount > 0 ? `${loadedQuotaCount} windows` : "Loading…";
   const hasMetrics = systemCards.length > 0 || networkCards.length > 0 || quotaCards.length > 0;
   const emptyMessage =
     Object.values(snapshot?.errors ?? {})

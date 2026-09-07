@@ -1,4 +1,4 @@
-export type ModuleKey = "cpu" | "memory" | "disk" | "uptime" | "network" | "battery" | "codex";
+export type ModuleKey = "cpu" | "memory" | "disk" | "uptime" | "network" | "battery" | "codex" | "claude";
 
 export interface CpuMetric {
   percent: number;
@@ -60,6 +60,17 @@ export interface CodexMetric {
   limits: CodexLimit[];
 }
 
+export interface ClaudeUsageWindow {
+  id: "five-hour" | "weekly";
+  name: string;
+  usedPercent: number;
+}
+
+export interface ClaudeMetric {
+  updatedAt: number;
+  windows: ClaudeUsageWindow[];
+}
+
 export interface StatusSnapshot {
   updatedAt: number;
   cpu?: CpuMetric;
@@ -69,6 +80,7 @@ export interface StatusSnapshot {
   network?: NetworkMetric;
   battery?: BatteryMetric;
   codex?: CodexMetric;
+  claude?: ClaudeMetric;
   errors: Partial<Record<ModuleKey, string>>;
 }
 
@@ -80,6 +92,9 @@ export interface ModulePreferences {
   showNetwork: boolean;
   showBattery: boolean;
   showCodex: boolean;
+  showSpark: boolean;
+  showClaude: boolean;
   networkUnits: "bytes" | "bits";
   codexPath: string;
+  claudeUsagePath: string;
 }

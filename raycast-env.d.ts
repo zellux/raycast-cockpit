@@ -22,12 +22,18 @@ type ExtensionPreferences = {
   "showBattery": boolean,
   /** Codex / GPT - Include remaining Codex usage windows from the signed-in Codex CLI. */
   "showCodex": boolean,
+  /** Codex Spark - Include Spark rate-limit windows alongside the other Codex windows. */
+  "showSpark": boolean,
+  /** Claude - Include remaining Claude five-hour and weekly usage from Claude Desktop. */
+  "showClaude": boolean,
   /** Dashboard Refresh - How often live metric cards update. Manual refresh updates them immediately. */
   "dashboardRefreshSeconds": "2" | "5" | "10" | "30",
   /** Network Units - Display network throughput as bytes or bits per second. */
   "networkUnits": "bytes" | "bits",
   /** Codex CLI Path - Absolute path to the Codex CLI executable. */
-  "codexPath": string
+  "codexPath": string,
+  /** Claude Usage File - Path to Claude Desktop's local plan usage history file. */
+  "claudeUsagePath": string
 }
 
 /** Preferences accessible in all the extension's commands */

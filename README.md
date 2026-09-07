@@ -1,6 +1,6 @@
 # Status Dashboard
 
-A configurable local Raycast extension for viewing essential Mac and Codex status in one place.
+A configurable local Raycast extension for viewing essential Mac, Codex, and Claude status in one place.
 
 ## Included modules
 
@@ -11,6 +11,7 @@ A configurable local Raycast extension for viewing essential Mac and Codex statu
 - Current upload and download speed on the default network interface
 - Battery percentage, state, and time remaining
 - Codex / GPT rate-limit windows, remaining percentage, and reset time
+- Claude five-hour and weekly remaining usage from Claude Desktop's local history
 
 Every module can be enabled or disabled independently in Raycast's extension settings.
 
@@ -39,7 +40,8 @@ Open Raycast Settings → Extensions → Status Dashboard. Available settings in
 - Per-module visibility toggles
 - Dashboard sampling interval
 - Network byte/bit units
-- Codex CLI executable path
+- Codex CLI executable path and optional Spark visibility (hidden by default)
+- Claude Desktop usage-history path
 
 ## Project structure
 
@@ -60,6 +62,7 @@ To add a module, extend `ModuleKey` and `StatusSnapshot`, add its collector to `
 - All system information is collected locally.
 - Network speed needs two samples before it can calculate a rate, so the first reading displays “Sampling…”.
 - Codex usage is cached for one minute to avoid repeatedly starting the Codex app server.
+- Claude usage is read locally and shows source freshness because Claude's history file does not include reset timestamps.
 - Individual collectors fail independently; one unavailable module does not prevent the rest of the dashboard from rendering.
 
 ## License

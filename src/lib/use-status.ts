@@ -19,8 +19,11 @@ export function useStatusSnapshot() {
       showNetwork: preferences.showNetwork,
       showBattery: preferences.showBattery,
       showCodex: preferences.showCodex,
+      showSpark: preferences.showSpark,
+      showClaude: preferences.showClaude,
       networkUnits: preferences.networkUnits,
       codexPath: preferences.codexPath,
+      claudeUsagePath: preferences.claudeUsagePath,
     }),
     [preferences],
   );
