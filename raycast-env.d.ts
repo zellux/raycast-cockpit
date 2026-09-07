@@ -12,11 +12,11 @@ type ExtensionPreferences = {
   "showCpu": boolean,
   /** Memory - Include current memory pressure and utilization. */
   "showMemory": boolean,
-  /** Disk - Include usage for the macOS root disk. */
+  /** Disk - Include usage for the selected volume. */
   "showDisk": boolean,
   /** Uptime - Include the time since this Mac was last started. */
   "showUptime": boolean,
-  /** Network - Include live upload and download throughput for the default interface. */
+  /** Network - Include live upload and download throughput for the selected interface. */
   "showNetwork": boolean,
   /** Battery - Include battery percentage, charging state, and estimated time remaining. */
   "showBattery": boolean,
@@ -30,7 +30,11 @@ type ExtensionPreferences = {
   "dashboardRefreshSeconds": "2" | "5" | "10" | "30",
   /** Network Units - Display network throughput as bytes or bits per second. */
   "networkUnits": "bytes" | "bits",
-  /** Codex CLI Path - Absolute path to the Codex CLI executable. */
+  /** Disk Volume - Mount point to report disk usage for. Defaults to the startup volume. */
+  "diskVolume": string,
+  /** Network Interface - Interface to measure, for example en0. Leave empty to follow the current default route. */
+  "networkInterface": string,
+  /** Codex CLI Path - Codex CLI executable. A bare name is resolved from PATH; use an absolute path to pin a specific install. */
   "codexPath": string,
   /** Claude Usage File - Path to Claude Desktop's local plan usage history file. */
   "claudeUsagePath": string

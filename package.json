@@ -42,7 +42,7 @@
       "type": "checkbox",
       "required": false,
       "title": "Disk",
-      "description": "Include usage for the macOS root disk.",
+      "description": "Include usage for the selected volume.",
       "label": "Show disk usage",
       "default": true
     },
@@ -60,7 +60,7 @@
       "type": "checkbox",
       "required": false,
       "title": "Network",
-      "description": "Include live upload and download throughput for the default interface.",
+      "description": "Include live upload and download throughput for the selected interface.",
       "label": "Show upload and download speed",
       "default": true
     },
@@ -145,13 +145,31 @@
       ]
     },
     {
+      "name": "diskVolume",
+      "type": "textfield",
+      "required": false,
+      "title": "Disk Volume",
+      "description": "Mount point to report disk usage for. Defaults to the startup volume.",
+      "default": "/",
+      "placeholder": "/"
+    },
+    {
+      "name": "networkInterface",
+      "type": "textfield",
+      "required": false,
+      "title": "Network Interface",
+      "description": "Interface to measure, for example en0. Leave empty to follow the current default route.",
+      "default": "",
+      "placeholder": "Automatic (default route)"
+    },
+    {
       "name": "codexPath",
       "type": "textfield",
       "required": false,
       "title": "Codex CLI Path",
-      "description": "Absolute path to the Codex CLI executable.",
-      "default": "/opt/homebrew/bin/codex",
-      "placeholder": "/opt/homebrew/bin/codex"
+      "description": "Codex CLI executable. A bare name is resolved from PATH; use an absolute path to pin a specific install.",
+      "default": "codex",
+      "placeholder": "codex"
     },
     {
       "name": "claudeUsagePath",

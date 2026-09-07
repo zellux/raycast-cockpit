@@ -97,11 +97,12 @@ export async function collectMemory(): Promise<MemoryMetric> {
   return { percent, totalBytes, usedBytes: Math.round((totalBytes * percent) / 100) };
 }
 
-export async function collectDisk(): Promise<DiskMetric> {
-  const output = await run("/bin/df", ["-k", "/"]);
+export async function collectDisk(volume: string): Promise<DiskMetric> {
+  const target = expandHomePath(volume.trim() || "/");
+  const output = await run("/bin/df", ["-k", target]);
   const lines = output.trim().split("\n");
   const fields = lines.at(-1)?.trim().split(/\s+/);
-  if (!fields || fields.length < 5) throw new Error("Could not parse disk usage");
+  if (!fields || fields.length < 5) throw new Error(`Could not parse disk usage for ${target}`);
   const totalBytes = Number(fields[1]) * 1024;
   const usedBytes = Number(fields[2]) * 1024;
   const availableBytes = Number(fields[3]) * 1024;
@@ -113,7 +114,9 @@ export async function collectUptime(): Promise<UptimeMetric> {
   return { seconds: Math.max(0, Math.floor(uptime())) };
 }
 
-async function defaultNetworkInterface(): Promise<string> {
+async function resolveNetworkInterface(preferred: string): Promise<string> {
+  const override = preferred.trim();
+  if (override) return override;
   const output = await run("/sbin/route", ["-n", "get", "default"]);
   const match = output.match(/interface:\s*(\S+)/);
   if (!match) throw new Error("No default network interface");
@@ -145,8 +148,8 @@ async function networkCounters(interfaceName: string): Promise<{ receivedBytes: 
   return { receivedBytes, sentBytes };
 }
 
-export async function collectNetwork(): Promise<NetworkMetric> {
-  const interfaceName = await defaultNetworkInterface();
+export async function collectNetwork(preferredInterface: string): Promise<NetworkMetric> {
+  const interfaceName = await resolveNetworkInterface(preferredInterface);
   const counters = await networkCounters(interfaceName);
   const timestamp = Date.now();
   const previousText = await LocalStorage.getItem<string>(NETWORK_SAMPLE_KEY);
@@ -253,9 +256,18 @@ function normalizeCodexResponse(response: RawRateLimitResponse): CodexMetric {
   return { limits };
 }
 
+// A bare command name is resolved from PATH below, so Homebrew, /usr/local, npm, and
+// custom installs all work without the user having to find the binary first.
+function resolveCodexCommand(codexPath: string): string {
+  const configured = codexPath.trim();
+  if (!configured) return "codex";
+  return expandHomePath(configured);
+}
+
 async function requestCodexRateLimits(codexPath: string): Promise<CodexMetric> {
+  const command = resolveCodexCommand(codexPath);
   return await new Promise<CodexMetric>((resolve, reject) => {
-    const child = spawn(codexPath, ["app-server", "--stdio"], {
+    const child = spawn(command, ["app-server", "--stdio"], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
@@ -279,7 +291,13 @@ async function requestCodexRateLimits(codexPath: string): Promise<CodexMetric> {
     const send = (message: unknown) => child.stdin.write(`${JSON.stringify(message)}\n`);
     const timer = setTimeout(() => finish(new Error("Codex usage request timed out")), 12_000);
 
-    child.on("error", (error) => finish(error));
+    child.on("error", (error) =>
+      finish(
+        (error as NodeJS.ErrnoException).code === "ENOENT"
+          ? new Error(`Codex CLI not found at "${command}". Set the Codex CLI Path in extension settings.`)
+          : error,
+      ),
+    );
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
     });
@@ -385,9 +403,21 @@ export async function collectSnapshot(preferences: ModulePreferences, forceCodex
   await Promise.all([
     capture("cpu", preferences.showCpu, collectCpu, (value) => (snapshot.cpu = value), snapshot.errors),
     capture("memory", preferences.showMemory, collectMemory, (value) => (snapshot.memory = value), snapshot.errors),
-    capture("disk", preferences.showDisk, collectDisk, (value) => (snapshot.disk = value), snapshot.errors),
+    capture(
+      "disk",
+      preferences.showDisk,
+      () => collectDisk(preferences.diskVolume),
+      (value) => (snapshot.disk = value),
+      snapshot.errors,
+    ),
     capture("uptime", preferences.showUptime, collectUptime, (value) => (snapshot.uptime = value), snapshot.errors),
-    capture("network", preferences.showNetwork, collectNetwork, (value) => (snapshot.network = value), snapshot.errors),
+    capture(
+      "network",
+      preferences.showNetwork,
+      () => collectNetwork(preferences.networkInterface),
+      (value) => (snapshot.network = value),
+      snapshot.errors,
+    ),
     capture("battery", preferences.showBattery, collectBattery, (value) => (snapshot.battery = value), snapshot.errors),
     capture(
       "codex",

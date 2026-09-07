@@ -22,6 +22,8 @@ export function useStatusSnapshot() {
       showSpark: preferences.showSpark,
       showClaude: preferences.showClaude,
       networkUnits: preferences.networkUnits,
+      diskVolume: preferences.diskVolume,
+      networkInterface: preferences.networkInterface,
       codexPath: preferences.codexPath,
       claudeUsagePath: preferences.claudeUsagePath,
     }),

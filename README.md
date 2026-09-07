@@ -2,6 +2,8 @@
 
 A configurable local Raycast extension for viewing essential Mac, Codex, and Claude status in one place.
 
+![Status Dashboard](assets/screenshot.png)
+
 ## Included modules
 
 - CPU usage
@@ -39,8 +41,9 @@ Open Raycast Settings → Extensions → Status Dashboard. Available settings in
 
 - Per-module visibility toggles
 - Dashboard sampling interval
-- Network byte/bit units
-- Codex CLI executable path and optional Spark visibility (hidden by default)
+- Network byte/bit units, and an optional fixed interface instead of the default route
+- The volume reported by the disk module
+- Codex CLI path, resolved from `PATH` by default, and optional Spark visibility (hidden by default)
 - Claude Desktop usage-history path
 
 ## Project structure
@@ -59,11 +62,24 @@ To add a module, extend `ModuleKey` and `StatusSnapshot`, add its collector to `
 
 ## Notes
 
-- All system information is collected locally.
+- All metrics are collected locally; see [Privacy](#privacy).
 - Network speed needs two samples before it can calculate a rate, so the first reading displays “Sampling…”.
 - Codex usage is cached for one minute to avoid repeatedly starting the Codex app server.
 - Claude usage is read locally and shows source freshness because Claude's history file does not include reset timestamps.
 - Individual collectors fail independently; one unavailable module does not prevent the rest of the dashboard from rendering.
+
+## Privacy
+
+This extension makes no network requests of its own and sends no telemetry. Everything it shows is read from your Mac and stays there.
+
+What it reads, and how:
+
+- System, network, and battery metrics come from standard read-only macOS commands: `top`, `memory_pressure`, `sysctl`, `df`, `route`, `netstat`, and `pmset`.
+- Codex usage comes from the Codex CLI you already have signed in. The extension starts `codex app-server --stdio` locally and asks it for your rate-limit windows. Codex talks to OpenAI with its own credentials; this extension never reads, stores, or transmits those credentials.
+- Claude usage is read from Claude Desktop's local usage-history file (`~/Library/Application Support/Claude/plan-usage-history.json` by default). The file is opened read-only; no Claude account data leaves your machine.
+- The only thing written anywhere is Raycast's local storage, which holds the previous network counter sample and a one-minute cache of the last Codex response.
+
+Nothing is uploaded, and no analytics or crash reporting is bundled. Any module you turn off in settings is not collected at all.
 
 ## License
 

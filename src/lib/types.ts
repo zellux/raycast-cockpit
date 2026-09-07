@@ -95,6 +95,8 @@ export interface ModulePreferences {
   showSpark: boolean;
   showClaude: boolean;
   networkUnits: "bytes" | "bits";
+  diskVolume: string;
+  networkInterface: string;
   codexPath: string;
   claudeUsagePath: string;
 }
