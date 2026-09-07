@@ -19,21 +19,36 @@ Every module can be enabled or disabled independently in Raycast's extension set
 
 A single-screen native Raycast grid with separate system, network, and Codex quota cards. Each card has a stable grid identity, so live updates replace only the metric card that changed instead of redrawing one dashboard-sized image. Metrics update at the configured interval, and manual refresh updates them immediately.
 
-## Install for local development
+## Install
+
+Cockpit is not on the Raycast Store, so it is installed from this repository. Node is needed once to build it; nothing has to keep running afterwards.
 
 Requirements:
 
 - macOS
 - Raycast
-- Node.js 22 or newer
+- Node.js 22 or newer, to build
 - Codex CLI signed in, if the Codex module is enabled
+
+```bash
+git clone https://github.com/<owner>/cockpit.git
+cd cockpit
+npm ci
+npm run build
+```
+
+Then open Raycast, run the **Import Extension** command, and choose this folder. Cockpit now behaves like any other installed extension — no dev server, no terminal window left open. Because it did not come from the Store, Raycast will not update it for you: `git pull && npm run build` picks up a new version.
+
+Assign a hotkey to **Open Cockpit** in Raycast Settings → Extensions if you want it a keystroke away.
+
+## Develop
 
 ```bash
 npm install
 npm run dev
 ```
 
-Raycast will register the local development extension. Assign a hotkey to **Open Cockpit** in Raycast Settings → Extensions if desired.
+This imports the extension and then watches for changes, reloading on save and printing errors to the terminal. Stopping it leaves the extension installed.
 
 ## Configuration
 

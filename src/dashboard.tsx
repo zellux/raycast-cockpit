@@ -256,7 +256,7 @@ export default function Dashboard() {
   return (
     <Grid
       isLoading={isLoading}
-      navigationTitle={updatedAt ? `Cockpit · ${updatedAt}` : "Cockpit"}
+      navigationTitle="Cockpit"
       searchBarPlaceholder="Filter metrics…"
       columns={5}
       aspectRatio="16/9"
@@ -270,7 +270,7 @@ export default function Dashboard() {
       {systemCards.length > 0 ? (
         <Grid.Section
           title="System"
-          subtitle={`${systemCards.length} metrics`}
+          subtitle={updatedAt ? `${systemCards.length} metrics · ${updatedAt}` : `${systemCards.length} metrics`}
           columns={5}
           aspectRatio="16/9"
           fit={Grid.Fit.Fill}
