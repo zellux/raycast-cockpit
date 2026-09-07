@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "status-dashboard",
-  "title": "Status Dashboard",
-  "description": "A configurable Mac status dashboard for system, network, battery, Codex, and Claude usage.",
+  "name": "cockpit",
+  "title": "Cockpit",
+  "description": "An instrument panel for your Mac: CPU, memory, disk, uptime, network speed, battery, and how much Codex and Claude usage you have left.",
   "icon": "extension-icon.png",
   "author": "zellux",
   "categories": [
@@ -12,9 +12,9 @@
   "commands": [
     {
       "name": "dashboard",
-      "title": "Open Status Dashboard",
+      "title": "Open Cockpit",
       "subtitle": "Mac and AI usage at a glance",
-      "description": "View the enabled system, network, battery, Codex, and Claude metrics.",
+      "description": "View the enabled system, network, battery, Codex, and Claude metrics in one grid.",
       "mode": "view"
     }
   ],

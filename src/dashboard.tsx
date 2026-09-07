@@ -256,7 +256,7 @@ export default function Dashboard() {
   return (
     <Grid
       isLoading={isLoading}
-      navigationTitle={updatedAt ? `Status Dashboard · ${updatedAt}` : "Status Dashboard"}
+      navigationTitle={updatedAt ? `Cockpit · ${updatedAt}` : "Cockpit"}
       searchBarPlaceholder="Filter metrics…"
       columns={5}
       aspectRatio="16/9"

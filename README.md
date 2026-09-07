@@ -1,8 +1,8 @@
-# Status Dashboard
+# Cockpit
 
-A configurable local Raycast extension for viewing essential Mac, Codex, and Claude status in one place.
+An instrument panel for your Mac, in Raycast: system vitals next to how much Codex and Claude usage you have left.
 
-![Status Dashboard](assets/screenshot.png)
+![Cockpit](assets/screenshot.png)
 
 ## Included modules
 
@@ -33,11 +33,11 @@ npm install
 npm run dev
 ```
 
-Raycast will register the local development extension. Assign a hotkey to **Open Status Dashboard** in Raycast Settings → Extensions if desired.
+Raycast will register the local development extension. Assign a hotkey to **Open Cockpit** in Raycast Settings → Extensions if desired.
 
 ## Configuration
 
-Open Raycast Settings → Extensions → Status Dashboard. Available settings include:
+Open Raycast Settings → Extensions → Cockpit. Available settings include:
 
 - Per-module visibility toggles
 - Dashboard sampling interval

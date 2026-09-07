@@ -22,8 +22,8 @@ import type {
 import { clampPercent } from "./format";
 
 const execFileAsync = promisify(execFile);
-const NETWORK_SAMPLE_KEY = "status-dashboard.network-sample.v1";
-const CODEX_CACHE_KEY = "status-dashboard.codex-cache.v1";
+const NETWORK_SAMPLE_KEY = "cockpit.network-sample.v1";
+const CODEX_CACHE_KEY = "cockpit.codex-cache.v1";
 const CODEX_CACHE_MS = 60_000;
 
 interface NetworkSample {
@@ -334,7 +334,7 @@ async function requestCodexRateLimits(codexPath: string): Promise<CodexMetric> {
       id: 1,
       method: "initialize",
       params: {
-        clientInfo: { name: "status-dashboard", version: "0.1.0" },
+        clientInfo: { name: "cockpit", version: "0.1.0" },
         capabilities: { experimentalApi: true },
       },
     });
