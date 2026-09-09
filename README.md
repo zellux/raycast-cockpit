@@ -2,7 +2,7 @@
 
 An instrument panel for your Mac, in Raycast: system vitals next to how much Codex and Claude usage you have left.
 
-![Cockpit](assets/screenshot.png)
+![Cockpit](metadata/cockpit-1.png)
 
 ## Included modules
 
@@ -31,8 +31,8 @@ Requirements:
 - Codex CLI signed in, if the Codex module is enabled
 
 ```bash
-git clone https://github.com/<owner>/cockpit.git
-cd cockpit
+git clone https://github.com/zellux/raycast-cockpit.git
+cd raycast-cockpit
 npm ci
 npm run build
 ```
