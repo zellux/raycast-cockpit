@@ -186,29 +186,30 @@ export default function Dashboard() {
       ]
     : [];
 
-  const codexQuotaCards: QuotaMetricCard[] = snapshot?.codex
-    ? snapshot.codex.limits
-        .filter((limit) => preferences.showSpark || !isSparkLimit(limit.id, limit.name))
-        .flatMap((limit) =>
-          [
-            { kind: "primary", window: limit.primary },
-            { kind: "secondary", window: limit.secondary },
-          ]
-            .filter((entry) => entry.window != null)
-            .map(({ kind, window }) => {
-              const remaining = remainingPercent(window!);
-              const windowName = formatWindowName(window!.windowDurationMins).replace(/ window$/i, "");
-              return {
-                id: `${limit.id}-${kind}`,
-                label: `${shortProviderName(limit.name)} · ${windowName}`,
-                percent: remaining,
-                reset: `Resets in ${formatResetTime(window!.resetsAt).split(" · ")[0]}`,
-                accent: usageAccent(remaining, true),
-              };
-            }),
-        )
-    : preferences.showCodex
-      ? [
+  const codexQuotaCards: QuotaMetricCard[] = !preferences.showCodex
+    ? []
+    : snapshot?.codex
+      ? snapshot.codex.limits
+          .filter((limit) => preferences.showSpark || !isSparkLimit(limit.id, limit.name))
+          .flatMap((limit) =>
+            [
+              { kind: "primary", window: limit.primary },
+              { kind: "secondary", window: limit.secondary },
+            ]
+              .filter((entry) => entry.window != null)
+              .map(({ kind, window }) => {
+                const remaining = remainingPercent(window!);
+                const windowName = formatWindowName(window!.windowDurationMins).replace(/ window$/i, "");
+                return {
+                  id: `${limit.id}-${kind}`,
+                  label: `${shortProviderName(limit.name)} · ${windowName}`,
+                  percent: remaining,
+                  reset: `Resets in ${formatResetTime(window!.resetsAt).split(" · ")[0]}`,
+                  accent: usageAccent(remaining, true),
+                };
+              }),
+          )
+      : [
           {
             id: "pending",
             label: "Codex usage",
@@ -216,22 +217,22 @@ export default function Dashboard() {
             reset: pendingDetail(snapshot, "codex"),
             accent: accents.neutral,
           },
-        ]
-      : [];
+        ];
 
-  const claudeQuotaCards: QuotaMetricCard[] = snapshot?.claude
-    ? snapshot.claude.windows.map((window) => {
-        const remaining = clampPercent(100 - window.usedPercent);
-        return {
-          id: `claude-${window.id}`,
-          label: `Claude · ${window.name}`,
-          percent: remaining,
-          reset: formatAge(snapshot.claude!.updatedAt),
-          accent: usageAccent(remaining, true),
-        };
-      })
-    : preferences.showClaude
-      ? [
+  const claudeQuotaCards: QuotaMetricCard[] = !preferences.showClaude
+    ? []
+    : snapshot?.claude
+      ? snapshot.claude.windows.map((window) => {
+          const remaining = clampPercent(100 - window.usedPercent);
+          return {
+            id: `claude-${window.id}`,
+            label: `Claude · ${window.name}`,
+            percent: remaining,
+            reset: formatAge(snapshot.claude!.updatedAt),
+            accent: usageAccent(remaining, true),
+          };
+        })
+      : [
           {
             id: "claude-pending",
             label: "Claude usage",
@@ -239,8 +240,7 @@ export default function Dashboard() {
             reset: pendingDetail(snapshot, "claude"),
             accent: accents.neutral,
           },
-        ]
-      : [];
+        ];
 
   const quotaCards = [...codexQuotaCards, ...claudeQuotaCards];
 
