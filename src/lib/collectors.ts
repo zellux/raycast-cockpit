@@ -271,7 +271,7 @@ async function requestCodexRateLimits(codexPath: string): Promise<CodexMetric> {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH ?? ""}`,
+        PATH: `/opt/homebrew/bin:/usr/local/bin:${join(homedir(), ".local/bin")}:${process.env.PATH ?? ""}`,
       },
     });
     let stdout = "";
